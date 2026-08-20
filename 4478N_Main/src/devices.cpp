@@ -173,6 +173,7 @@ imu_orientation_e_t DualIMU::get_physical_orientation() const {
 
 // ---------- devices / lemlib setup ----------
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
+pros::Vision visionSensor(20);
 pros::MotorGroup right_motors({18, -19, 20}, pros::MotorGearset::blue);
 pros::MotorGroup left_motors({-12, 13, -14}, pros::MotorGearset::blue);
 pros::Motor firstStage{-7, pros::MotorGearset::green};
