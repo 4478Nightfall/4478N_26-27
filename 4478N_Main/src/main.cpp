@@ -26,13 +26,10 @@ void initialize()
     chassis.calibrate(); // calibrate sensors
 
     // Initialize color sensor
-    colorSort.set_led_pwm(50); // Set LED brightness to 50%
     pros::delay(100);           // Allow sensor to stabilize
 
-    hood.set_value(LOW); // Set back gate to default position (closed/down)
-    matchloadMech.set_value(LOW);
-    descore.set_value(HIGH);
-    midGoal.set_value(HIGH);
+    rotator.set_value(LOW); // Set back gate to default position (closed/down)
+ 
 
     // Add a small delay to ensure solenoid has time to respond
     pros::delay(100);
@@ -108,10 +105,8 @@ void autonomous()
     int selection = getAutonSelection(); // Get selected auton routine
     left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
-    hood.set_value(LOW);
-    matchloadMech.set_value(LOW);
-    descore.set_value(HIGH); // Start with back gate closed (down)
-    midGoal.set_value(HIGH);
+    rotator.set_value(LOW);
+
 
     // Run the selected autonomous routine
     // switch (selection)
@@ -174,7 +169,6 @@ void autonomous()
     //     break;
     // }
 
-        left7BallHold();
 }
 
 /**
@@ -192,10 +186,8 @@ void autonomous()
  */
 void opcontrol()
 {
-    hood.set_value(LOW); // Start with front gate closed (down)
-    matchloadMech.set_value(LOW);
-    descore.set_value(HIGH);
-    midGoal.set_value(HIGH);
+    rotator.set_value(LOW); // Start with front gate closed (down)
+
 
 
     // backGate.set_value(LOW);    // Start with back gate closed (down)i
@@ -215,8 +207,9 @@ void opcontrol()
                  
         // Display color sensor debugging info
 
-        firstStage.set_brake_mode(MOTOR_BRAKE_HOLD);
-        middleStage.set_brake_mode(MOTOR_BRAKE_HOLD);
+        casL.set_brake_mode(MOTOR_BRAKE_HOLD);
+        casR.set_brake_mode(MOTOR_BRAKE_HOLD);
+        intake.set_brake_mode(MOTOR_BRAKE_HOLD);
         right_motors.set_brake_mode(MOTOR_BRAKE_COAST); // Coast for smoother drive
         left_motors.set_brake_mode(MOTOR_BRAKE_COAST);
                      pros::Task colorSortTask{colorLoopHigh};
@@ -235,39 +228,24 @@ void opcontrol()
         chassis.tank(leftY, rightY);
 
         // Intake: Y (middle-goal spin) takes priority over R2/R1.
-        if (controller.get_digital(E_CONTROLLER_DIGITAL_Y))
+        
+        if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
         {
-            firstStage.move(127);
-            middleStage.move(50);
-            backBottom.move(-40);
+            intake(-127); // Intake in
         }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L1))
         {
-            firstStage.move(127);
-            middleStage.move(127);
-            backBottom.move(127);
-        }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_R1))
-        {
-            firstStage.move(-127);
-            middleStage.move(-127);
-            backBottom.move(-127);
+            intake(127); // Intake out
         }
         else
         {
-            firstStage.set_brake_mode(MOTOR_BRAKE_COAST);
-            middleStage.set_brake_mode(MOTOR_BRAKE_COAST);
-            backBottom.set_brake_mode(MOTOR_BRAKE_COAST);
-            firstStage.brake();
-            middleStage.brake();
-            backBottom.brake();
+            intake.set_brake_mode(MOTOR_BRAKE_HOLD);
+            intake.break(); // Stop intake when neither button is pressed
         }
 
-       if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
-            midGoal.set_value(midGoal.get_value() == LOW ? HIGH : LOW);
-        }
+       
         // Hood control - open when held, close when released
-        if (controller.get_digital(E_CONTROLLER_DIGITAL_L1))
+        if (controller.get_digital(E_CONTROLLER_DIGITAL_R1))
         {
             hood.set_value(LOW); // Open hood when button is held
         }
@@ -277,7 +255,7 @@ void opcontrol()
         }
 
         // Toggle front gate with Left
-        if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+        if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
         {
             descore.set_value(LOW);
         }

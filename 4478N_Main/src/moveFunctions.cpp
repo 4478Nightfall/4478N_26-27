@@ -20,43 +20,6 @@ using namespace lemlib;
 
 // ---------- drive / intake / pid utils ----------
 
-void handleMidGoal(){
-    if (backBottom.get_actual_velocity() < 0 && middleStage.get_actual_velocity() > 0){
-        midGoal.set_value(HIGH);
-    }
-    else{
-        midGoal.set_value(LOW);
-    }
-}
-
-void adjustLongClose(){
-    if (chassis.getPose().theta > 270){
-        chassis.swingToHeading(270, DriveSide::LEFT, 500, {.direction=AngularDirection::CCW_COUNTERCLOCKWISE,.minSpeed = 60}, false);
-    }
-    else if (chassis.getPose().theta < 270){
-        chassis.swingToHeading(270, DriveSide::RIGHT, 500, {.direction=AngularDirection::CW_CLOCKWISE,.minSpeed = 60}, false);
-    }
-}
-
-static pros::Task* handleMidGoalTaskPtr = nullptr;
-
-static void handleMidGoalTaskFn(void*) {
-    while (true) {
-        handleMidGoal();
-        pros::delay(20);
-    }
-}
-
-void startHandleMidGoalTask() {
-    if (handleMidGoalTaskPtr == nullptr) {
-        handleMidGoalTaskPtr = new pros::Task(
-            handleMidGoalTaskFn,
-            nullptr,
-            TASK_PRIORITY_DEFAULT,
-            4096,
-            "handleMidGoal");
-    }
-}
 
 double xPos = 0;
 double yPos = 0;
@@ -67,120 +30,9 @@ void setPose(){
      yPos = chassis.getPose().y;
      theta = chassis.getPose().theta;
 }
-void holdPush(){
-   if (chassis.getPose().x != xPos || chassis.getPose().y != yPos || chassis.getPose().theta != theta){
-       chassis.moveToPose(xPos, yPos, theta, 1000, {},false);
-   }
-    
-}
-
-void wing(){
-    chassis.setPose(-31.232,-47.334,chassis.getPose().theta);
-    delay(100);
-    handleDescore();
-    chassis.moveToPose(-45.692,-36.536,275,2000,{.forwards=true, .lead=.15,.minSpeed=60},false);
-    
-    turnToHeadingSmart(272,600,{},false);
-
-    drivePID(-24,100,800);
-    while(true){
-    chassis.swingToHeading(265,DriveSide::RIGHT,300,{.minSpeed=70},true); 
-    delay(20);
-
-    }
-    left_motors.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    right_motors.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    left_motors.brake();
-    right_motors.brake();
-}
-
-void spinIntake(double direction)
-{
-    firstStage.set_brake_mode(MOTOR_BRAKE_HOLD);
-    middleStage.set_brake_mode(MOTOR_BRAKE_HOLD);
-    backBottom.set_brake_mode(MOTOR_BRAKE_HOLD);
-    firstStage.move(direction * 127);
-    middleStage.move(direction * 127);
-    backBottom.move(direction * 127);
-}
 
 
-void scoreMiddle(){
-    firstStage.set_brake_mode(MOTOR_BRAKE_HOLD);
-    middleStage.set_brake_mode(MOTOR_BRAKE_HOLD);
-    backBottom.set_brake_mode(MOTOR_BRAKE_HOLD);
-    firstStage.move(127);
-    middleStage.move(50);
-    backBottom.move(-50);
-}
-void scoreMiddleSkills(){
-    firstStage.set_brake_mode(MOTOR_BRAKE_HOLD);
-    middleStage.set_brake_mode(MOTOR_BRAKE_HOLD);
-    backBottom.set_brake_mode(MOTOR_BRAKE_HOLD);
-    firstStage.move(40);
-    middleStage.move(40);
-    backBottom.move(-40);
-}
 
-void stopIntake()
-{
-    firstStage.set_brake_mode(MOTOR_BRAKE_HOLD);
-    middleStage.set_brake_mode(MOTOR_BRAKE_HOLD);
-    backBottom.set_brake_mode(MOTOR_BRAKE_HOLD);
-    firstStage.brake();
-    middleStage.brake();
-    backBottom.brake();
-}
-
-void scoreLongClose(int time){
-    spinIntake(1);
-   drivePID(-100,100,400);
-chassis.turnToHeading(270,1000);
-drivePID(-100,100,1000);
-    
-}
-
-void scoreLongFar(int time){
-    spinIntake(1);
-    drivePID(-10,100,400);
-chassis.turnToHeading(90,1000);
-drivePID(-10,100,400);
-}
-
-void matchLoad(int timeMs){
-    double start = pros::millis();
-    const int wiggleInterval = 300;   // ms between each wiggle
-    const int wigglePower = 40;     // motor power for wiggle
-    bool turnLeft = true;
-    while (pros::millis() - start < timeMs) {
-        if (turnLeft) {
-            left_motors.move(-wigglePower/2);
-            right_motors.move(wigglePower);
-        } else {
-            left_motors.move(wigglePower);
-            right_motors.move(-wigglePower/2);
-        }
-        turnLeft = !turnLeft;
-        pros::delay(wiggleInterval);
-    }
-    left_motors.brake();
-    right_motors.brake();
-}
-
-void handleHood()
-{
-    hood.set_value(hood.get_value() == LOW ? HIGH : LOW);
-}
-
-void handleDescore()
-{
-    descore.set_value(descore.get_value() == LOW ? HIGH : LOW);
-}
-
-void handleMLMech()
-{
-    matchloadMech.set_value(matchloadMech.get_value() == LOW ? HIGH : LOW);
-}
 
 double slewStep = 20.0;
 double slewRate = 0.5;
@@ -622,48 +474,6 @@ void driveForTime(int power, int time)
     right_motors.brake();
 }
 
-// Back into long goal at full speed, then slow when close (for ML then goal).
-// Uses back distance sensor only to switch to slow; slow phase runs for a fixed timeout then stops.
-void backIntoLongGoalML()
-{
-    const double fullSpeed = 100.0;       // Full backup speed
-    const double slowSpeed = 20.0;        // Speed when close to goal
-    const double closeDistMm = 200.0;     // Below this distance (mm), switch to slow
-    const double backupTimeout = 1300.0;  // ms max for full-speed phase (if we never get close)
-    const double slowPhaseTimeout = 200.0; // ms to run at slow speed, then stop
-
-    left_motors.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-    right_motors.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-    double startTime = pros::millis();
-    double slowPhaseStart = -1;  // When we entered slow phase (-1 = not yet)
-
-    while (true)
-    {
-        double elapsed = pros::millis() - startTime;
-        double distMm = backDistance.get();
-        bool isClose = (distMm > 0 && distMm < closeDistMm);
-
-        if (isClose && slowPhaseStart < 0)
-            slowPhaseStart = pros::millis();
-
-        if (slowPhaseStart >= 0) {
-            // In slow phase: run for slowPhaseTimeout then stop
-            if (pros::millis() - slowPhaseStart >= slowPhaseTimeout)
-                break;
-            left_motors.move(-slowSpeed);
-            right_motors.move(-slowSpeed);
-        } else {
-            // Full-speed phase: stop if total timeout (never got close)
-            if (elapsed >= backupTimeout)
-                break;
-            left_motors.move(-fullSpeed);
-            right_motors.move(-fullSpeed);
-        }
-        pros::delay(20);
-    }
-    left_motors.brake();
-    right_motors.brake();
-}
 
 void turnToHeadingSmart(float theta, int timeout, TurnToHeadingParams params, bool async)
 {

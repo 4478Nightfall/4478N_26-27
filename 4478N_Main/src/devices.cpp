@@ -173,13 +173,11 @@ imu_orientation_e_t DualIMU::get_physical_orientation() const {
 
 // ---------- devices / lemlib setup ----------
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
-pros::Vision visionSensor(20);
 pros::MotorGroup right_motors({18, -19, 20}, pros::MotorGearset::blue);
 pros::MotorGroup left_motors({-12, 13, -14}, pros::MotorGearset::blue);
-pros::Motor firstStage{-7, pros::MotorGearset::green};
-pros::Motor middleStage{-2, pros::MotorGearset::blue};
-pros::Motor backBottom{10, pros::MotorGearset::green};
-pros::MotorGroup intake({-7, -2, 21});
+pros::Motor casL{-7, pros::MotorGearset::green};
+pros::Motor intake{-2, pros::MotorGearset::blue};
+pros::Motor casR{10, pros::MotorGearset::green};
 pros::Motor mfl(-13 , pros::MotorGearset::blue);
 pros::Motor mbl(-14, pros::MotorGearset::blue);
 pros::Motor mml(-12, pros::MotorGearset::blue);
@@ -203,10 +201,8 @@ Distance* frontDistance = &frontDistanceSensor;
 Distance* backDistancePtr = &backDistance;
 Distance* leftDistance = &leftDistanceSensor;
 Distance* rightDistance = &rightDistanceSensor;
-adi::Port hood('A', E_ADI_DIGITAL_OUT);
-adi::Port matchloadMech('B', E_ADI_DIGITAL_OUT);
-adi::Port descore('C', E_ADI_DIGITAL_OUT);
-adi::Port midGoal('D', E_ADI_DIGITAL_OUT);
+adi::Port rotator('A', E_ADI_DIGITAL_OUT);
+
 
 
 lemlib::TrackingWheel horizontal_tracking_wheel(&hTracker, lemlib::Omniwheel::NEW_2, 1, 1);
@@ -260,4 +256,3 @@ lemlib::Chassis chassis(drivetrain,
                         &throttleCurve,
                         &steerCurve);
 
-TeamColor currentTeam = blue;
