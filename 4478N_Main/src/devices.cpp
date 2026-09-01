@@ -173,17 +173,16 @@ imu_orientation_e_t DualIMU::get_physical_orientation() const {
 
 // ---------- devices / lemlib setup ----------
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
-pros::MotorGroup right_motors({18, -19, 20}, pros::MotorGearset::blue);
-pros::MotorGroup left_motors({-12, 13, -14}, pros::MotorGearset::blue);
-pros::Motor casL{-7, pros::MotorGearset::green};
+pros::MotorGroup right_motors({18, 20}, pros::MotorGearset::blue);
+pros::MotorGroup left_motors({13, -14}, pros::MotorGearset::blue);
+pros::Motor casL{-7, pros::MotorGearset::blue};
 pros::Motor intake{-2, pros::MotorGearset::blue};
-pros::Motor casR{10, pros::MotorGearset::green};
+pros::Motor casR{10, pros::MotorGearset::blue};
+pros::Motor roller(-3, pros::MotorGearset::green);
 pros::Motor mfl(-13 , pros::MotorGearset::blue);
 pros::Motor mbl(-14, pros::MotorGearset::blue);
-pros::Motor mml(-12, pros::MotorGearset::blue);
 pros::Motor mfr(18, pros::MotorGearset::blue);
 pros::Motor mbr(20, pros::MotorGearset::blue);
-pros::Motor mmr(19, pros::MotorGearset::blue);  
 pros::Rotation autonSelector(7);
 pros::Rotation hTracker(21);
 pros::Imu imu1(6);
@@ -202,7 +201,7 @@ Distance* backDistancePtr = &backDistance;
 Distance* leftDistance = &leftDistanceSensor;
 Distance* rightDistance = &rightDistanceSensor;
 adi::Port rotator('A', E_ADI_DIGITAL_OUT);
-
+adi::Port toggle('B', E_ADI_DIGITAL_OUT);
 
 
 lemlib::TrackingWheel horizontal_tracking_wheel(&hTracker, lemlib::Omniwheel::NEW_2, 1, 1);
@@ -210,7 +209,7 @@ lemlib::TrackingWheel horizontal_tracking_wheel(&hTracker, lemlib::Omniwheel::NE
 lemlib::Drivetrain drivetrain(&left_motors,
                               &right_motors,
                               10.5,
-                              lemlib::Omniwheel::NEW_325,
+                              lemlib::Omniwheel::NEW_275,
                               450,
                               2);
 

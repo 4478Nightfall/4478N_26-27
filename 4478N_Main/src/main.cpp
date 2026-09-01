@@ -242,31 +242,25 @@ void opcontrol()
             intake.set_brake_mode(MOTOR_BRAKE_HOLD);
             intake.break(); // Stop intake when neither button is pressed
         }
-
-       
-        // Hood control - open when held, close when released
         if (controller.get_digital(E_CONTROLLER_DIGITAL_R1))
         {
-            hood.set_value(LOW); // Open hood when button is held
+            casL(127); // Spin left cas out
+            casR(127); // Spin right cas out
+        }
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
+        {
+            casL(-127); // Spin left cas in
+            casR(-127); // Spin right cas in
         }
         else
         {
-            hood.set_value(HIGH); // Close hood when button is released
+            casL.set_brake_mode(MOTOR_BRAKE_HOLD);
+            casR.set_brake_mode(MOTOR_BRAKE_HOLD);
+            casL.break(); // Stop left cas when neither button is pressed
+            casR.break(); // Stop right cas when neither button is pressed
         }
-
-        // Toggle front gate with Left
-        if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
-        {
-            descore.set_value(LOW);
-        }
-        else {
-            descore.set_value(HIGH); // Close descore when button is released
-        }
-
-        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
-            matchloadMech.set_value(matchloadMech.get_value() == LOW ? HIGH : LOW);
-        }
-
+       
+       
         // delay to save resources
         pros::delay(25);
     }
