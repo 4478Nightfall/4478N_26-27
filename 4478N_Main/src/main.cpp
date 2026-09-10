@@ -2,11 +2,9 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/chassis.hpp"
 #include "devices.h"
-#include "colorSort.h"
 #include "auton.h"
 #include "autonSelector.h"
 #include "moveFunctions.h"
-#include "opticalAlign.h"
 #include "pros/misc.h"
 #include "pros/motors.h"
 #include <cmath>  // For fabs()
@@ -28,7 +26,7 @@ void initialize()
     // Initialize color sensor
     pros::delay(100);           // Allow sensor to stabilize
 
-    rotator.set_value(LOW); // Set back gate to default position (closed/down)
+    intPos.set_value(LOW); // Set back gate to default position (closed/down)
  
 
     // Add a small delay to ensure solenoid has time to respond
@@ -105,7 +103,7 @@ void autonomous()
     int selection = getAutonSelection(); // Get selected auton routine
     left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
-    rotator.set_value(LOW);
+    intPos.set_value(LOW);
 
 
     // Run the selected autonomous routine
@@ -186,20 +184,15 @@ void autonomous()
  */
 void opcontrol()
 {
-    rotator.set_value(LOW); // Start with front gate closed (down)
-
-
-
-    // backGate.set_value(LOW);    // Start with back gate closed (down)i
-// startHandleMidGoalTask();
+    intPos.set_value(LOW); // Start with front gate closed (down)
     // Add a small delay to ensure solenoid has time to respond
     pros::delay(100);
 
     // Start color sorting task once
 
     // Outtake speed toggle variables (outside loop to persist state)
-    uint32_t midGoalReleaseTime = 0;  // when A was released, for 2 sec hold
     bool wasAPressed = false;
+    bool rolMode; //change between settings for roller position
 
     // Main driver control loop
     while (true)
@@ -212,9 +205,6 @@ void opcontrol()
         intake.set_brake_mode(MOTOR_BRAKE_HOLD);
         right_motors.set_brake_mode(MOTOR_BRAKE_COAST); // Coast for smoother drive
         left_motors.set_brake_mode(MOTOR_BRAKE_COAST);
-                     pros::Task colorSortTask{colorLoopHigh};
-
-
 
         // Get joystick values for tank drive
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
@@ -231,35 +221,85 @@ void opcontrol()
         
         if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
         {
-            intake(-127); // Intake in
+            intake.move(-127); // Intake in
+            roller.move(127);
         }
         else if (controller.get_digital(E_CONTROLLER_DIGITAL_L1))
         {
-            intake(127); // Intake out
+            intake.move(127); // Intake out
         }
         else
         {
             intake.set_brake_mode(MOTOR_BRAKE_HOLD);
-            intake.break(); // Stop intake when neither button is pressed
+            intake.brake(); // Stop intake when neither button is pressed
         }
         if (controller.get_digital(E_CONTROLLER_DIGITAL_R1))
         {
-            casL(127); // Spin left cas out
-            casR(127); // Spin right cas out
+            casL.move(127); // Spin left cas out
+            casR.move(127); // Spin right cas out
+            rolMode = true; // change between up and mid values when going up
         }
         else if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
         {
-            casL(-127); // Spin left cas in
-            casR(-127); // Spin right cas in
+            casL.move(-127); // Spin left cas in
+            casR.move(-127); // Spin right cas in
+            rolMode = false; //change bt down and mid val when going down
+        }
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+        {
+            // Auto-retract cas to the bottom while intaking (R1/R2 above take priority over this)
+            if (casL.get_position() > casDownVal) {
+                casL.move(-50);
+            } else {
+                casL.brake();
+            }
+            if (casR.get_position() > casDownVal) {
+                casR.move(-50);
+            } else {
+                casR.brake();
+            }
         }
         else
         {
             casL.set_brake_mode(MOTOR_BRAKE_HOLD);
             casR.set_brake_mode(MOTOR_BRAKE_HOLD);
-            casL.break(); // Stop left cas when neither button is pressed
-            casR.break(); // Stop right cas when neither button is pressed
+            casL.brake(); // Stop left cas when neither button is pressed
+            casR.brake(); // Stop right cas when neither button is pressed
         }
+
+       if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_X)){
+        intPos.set_value(!intPos.get_value());
+       }
        
+       if (rolMode == false){
+        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_A)){
+            if(high == true)
+            {
+                goDown();
+            }
+            else if (mid == true){
+                goDown();
+            }
+            else if (low == true){
+                goMid();
+            }
+        }
+       }
+
+       if (rolMode == true){
+        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_A)){
+            if(high == true)
+            {
+                goMid();
+            }
+            else if (mid == true){
+                goHigh();
+            }
+            else if (low == true){
+                goMid();
+            }
+        }
+       }
        
         // delay to save resources
         pros::delay(25);

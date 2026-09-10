@@ -9,7 +9,6 @@
 #include "sensor.h"
 #include "moveFunctions.h"
 #include "autonSelector.h"
-#include "opticalAlign.h"
 #include <string>
 #include <iostream>
 #include <cstdio>

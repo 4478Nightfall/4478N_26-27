@@ -175,10 +175,58 @@ imu_orientation_e_t DualIMU::get_physical_orientation() const {
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 pros::MotorGroup right_motors({18, 20}, pros::MotorGearset::blue);
 pros::MotorGroup left_motors({13, -14}, pros::MotorGearset::blue);
-pros::Motor casL{-7, pros::MotorGearset::blue};
-pros::Motor intake{-2, pros::MotorGearset::blue};
-pros::Motor casR{10, pros::MotorGearset::blue};
+pros::Motor casL(-7, pros::MotorGearset::blue);
+pros::Motor casR(10, pros::MotorGearset::blue);
+pros::Motor intake(-2, pros::MotorGearset::blue);
 pros::Motor roller(-3, pros::MotorGearset::green);
+pros::Motor rollerPos(-4, pros::MotorGearset::green);
+pros::Rotation tilter(5);
+int highVal = 0;
+int midVal = 10000;
+int downVal = 20000;
+int casDownVal = 0;
+bool high;
+bool mid;
+bool low = true;
+
+void goHigh(){
+    while(tilter.get_position() > highVal){
+        rollerPos.move(50);
+    }
+    rollerPos.brake();
+     low = false;
+    high = true;
+    mid = false;
+}
+
+void goMid(){
+        while(tilter.get_position() > midVal){
+            rollerPos.move(50);
+       }
+       rollerPos.brake();
+        low = false;
+    high = false;
+    mid = true;
+
+       while(tilter.get_position() < midVal){
+            rollerPos.move(-50);
+       }
+       rollerPos.brake();
+        low = false;
+    high = false;
+    mid = true;
+}
+
+void goDown(){
+    while(tilter.get_position() < downVal){
+        rollerPos.move(-50);
+    }
+    low = true;
+    high = false;
+    mid = false;
+    rollerPos.brake();
+}
+
 pros::Motor mfl(-13 , pros::MotorGearset::blue);
 pros::Motor mbl(-14, pros::MotorGearset::blue);
 pros::Motor mfr(18, pros::MotorGearset::blue);
@@ -188,8 +236,6 @@ pros::Rotation hTracker(21);
 pros::Imu imu1(6);
 pros::Imu imu2(18);
 DualIMU imu(&imu1, &imu2); // combined imu object
-pros::Optical colorSort(5);
-pros::Optical counter(20);
 
 pros::Distance frontDistanceSensor(8);
 pros::Distance backDistance(17);
@@ -200,8 +246,7 @@ Distance* frontDistance = &frontDistanceSensor;
 Distance* backDistancePtr = &backDistance;
 Distance* leftDistance = &leftDistanceSensor;
 Distance* rightDistance = &rightDistanceSensor;
-adi::Port rotator('A', E_ADI_DIGITAL_OUT);
-adi::Port toggle('B', E_ADI_DIGITAL_OUT);
+adi::Port intPos('A', E_ADI_DIGITAL_OUT);
 
 
 lemlib::TrackingWheel horizontal_tracking_wheel(&hTracker, lemlib::Omniwheel::NEW_2, 1, 1);

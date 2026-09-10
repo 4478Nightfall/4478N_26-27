@@ -2,11 +2,9 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/chassis.hpp"
 #include "devices.h"
-#include "colorSort.h"
 #include "auton.h"
 #include "autonSelector.h"
 #include "moveFunctions.h"
-#include "opticalAlign.h"
 #include "pros/misc.h"
 #include "pros/motors.h"
 #include <cmath>
