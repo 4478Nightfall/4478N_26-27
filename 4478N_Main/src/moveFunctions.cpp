@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <atomic>
 #include <memory>
+#include <cmath>
 #include "pros/rtos.hpp"
 
 using namespace pros;
@@ -31,8 +32,109 @@ void setPose(){
      theta = chassis.getPose().theta;
 }
 
+// ---------- mechanism control (callable from autonomous and opcontrol) ----------
 
+// toggles intPos
+void toggleIntPos() {
+    intPos.set_value(!intPos.get_value());
+}
 
+void rollerSpin(int vel){
+    roller.move(vel);
+}
+
+// moves cas motors to a degree
+void setCasDegree(double targetDeg) {
+    const double tolerance = 1.0; // degrees
+
+    while (fabs(casL.get_position() - targetDeg) > tolerance ||
+           fabs(casR.get_position() - targetDeg) > tolerance) {
+        if (casL.get_position() > targetDeg + tolerance) casL.move(-50);
+        else if (casL.get_position() < targetDeg - tolerance) casL.move(50);
+        else casL.brake();
+
+        if (casR.get_position() > targetDeg + tolerance) casR.move(-50);
+        else if (casR.get_position() < targetDeg - tolerance) casR.move(50);
+        else casR.brake();
+    }
+    casL.brake();
+    casR.brake();
+}
+
+// async version of setCasDegree - runs in the background so cas can move at
+// the same time as driving or other tasks
+static std::atomic<bool> casStopRequested(false);
+static std::atomic<bool> casRunning(false);
+static pros::Task* casTaskPtr = nullptr;
+
+static void casTaskFn(void* rawTarget) {
+    std::unique_ptr<double> targetPtr(reinterpret_cast<double*>(rawTarget));
+    double targetDeg = *targetPtr;
+    casRunning = true;
+    casStopRequested = false;
+
+    const double tolerance = 1.0; // degrees
+    while ((fabs(casL.get_position() - targetDeg) > tolerance ||
+            fabs(casR.get_position() - targetDeg) > tolerance) && !casStopRequested) {
+        if (casL.get_position() > targetDeg + tolerance) casL.move(-50);
+        else if (casL.get_position() < targetDeg - tolerance) casL.move(50);
+        else casL.brake();
+
+        if (casR.get_position() > targetDeg + tolerance) casR.move(-50);
+        else if (casR.get_position() < targetDeg - tolerance) casR.move(50);
+        else casR.brake();
+
+        pros::delay(20);
+    }
+    casL.brake();
+    casR.brake();
+    casRunning = false;
+}
+
+// starts moving cas to a degree in the background, returns immediately
+void setCasDegreeAsync(double targetDeg) {
+    if (casRunning) {
+        casStopRequested = true;
+        for (int i = 0; i < 50 && casRunning; ++i) pros::delay(10);
+    }
+    if (casTaskPtr != nullptr && !casRunning) {
+        delete casTaskPtr;
+        casTaskPtr = nullptr;
+    }
+    auto* targetPtr = new double(targetDeg);
+    casTaskPtr = new pros::Task(casTaskFn, targetPtr, TASK_PRIORITY_DEFAULT,
+                                 TASK_STACK_DEPTH_DEFAULT, "setCasDegreeAsync");
+}
+
+// stops whichever cas async move is currently running
+void stopCasAsync() {
+    casStopRequested = true;
+    for (int i = 0; i < 100 && casRunning; ++i) pros::delay(10);
+    if (casTaskPtr != nullptr && !casRunning) {
+        delete casTaskPtr;
+        casTaskPtr = nullptr;
+    }
+}
+
+// runs intake, drops cascade and rollerPos down (cas and rollerPos move in
+// the background so this returns immediately and driving isn't blocked)
+void intakeDown() {
+    intake.move(-127); // Intake in
+    roller.move(127);
+    setCasDegreeAsync(0); // Drop cascade to bottom
+    goDownAsync();        // Tilt rollerPos all the way down
+}
+
+// reverses intake
+void intake(){
+    intake.move(-127);
+    roller.move(127);
+}
+
+void outtake() {
+    intake.move(127);
+    roller.move(-127);
+}
 
 double slewStep = 20.0;
 double slewRate = 0.5;

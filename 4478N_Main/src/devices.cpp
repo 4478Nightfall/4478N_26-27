@@ -10,6 +10,8 @@
 #include <string>
 #include <iostream>
 #include <thread>
+#include <atomic>
+#include <memory>
 using namespace pros;
 using namespace lemlib;
 
@@ -189,6 +191,7 @@ bool high;
 bool mid;
 bool low = true;
 
+// moves rollerPos to high
 void goHigh(){
     while(tilter.get_position() > highVal){
         rollerPos.move(50);
@@ -199,6 +202,7 @@ void goHigh(){
     mid = false;
 }
 
+// moves rollerPos to mid
 void goMid(){
         while(tilter.get_position() > midVal){
             rollerPos.move(50);
@@ -217,6 +221,7 @@ void goMid(){
     mid = true;
 }
 
+// moves rollerPos to down
 void goDown(){
     while(tilter.get_position() < downVal){
         rollerPos.move(-50);
@@ -225,6 +230,80 @@ void goDown(){
     high = false;
     mid = false;
     rollerPos.brake();
+}
+
+// async version of goHigh/goMid/goDown - runs in the background so rollerPos
+// can move at the same time as driving or other tasks
+enum class RollerTarget { High, Mid, Down };
+
+static std::atomic<bool> rollerPosStopRequested(false);
+static std::atomic<bool> rollerPosRunning(false);
+static pros::Task* rollerPosTaskPtr = nullptr;
+
+static void rollerPosTaskFn(void* rawTarget) {
+    std::unique_ptr<RollerTarget> targetPtr(reinterpret_cast<RollerTarget*>(rawTarget));
+    RollerTarget target = *targetPtr;
+    rollerPosRunning = true;
+    rollerPosStopRequested = false;
+
+    if (target == RollerTarget::High) {
+        while (tilter.get_position() > highVal && !rollerPosStopRequested) {
+            rollerPos.move(50);
+            pros::delay(20);
+        }
+    } else if (target == RollerTarget::Mid) {
+        while (tilter.get_position() > midVal && !rollerPosStopRequested) {
+            rollerPos.move(50);
+            pros::delay(20);
+        }
+        rollerPos.brake();
+        while (tilter.get_position() < midVal && !rollerPosStopRequested) {
+            rollerPos.move(-50);
+            pros::delay(20);
+        }
+    } else {
+        while (tilter.get_position() < downVal && !rollerPosStopRequested) {
+            rollerPos.move(-50);
+            pros::delay(20);
+        }
+    }
+    rollerPos.brake();
+
+    if (!rollerPosStopRequested) {
+        low = (target == RollerTarget::Down);
+        high = (target == RollerTarget::High);
+        mid = (target == RollerTarget::Mid);
+    }
+    rollerPosRunning = false;
+}
+
+static void startRollerPosTask(RollerTarget target) {
+    if (rollerPosRunning) {
+        rollerPosStopRequested = true;
+        for (int i = 0; i < 50 && rollerPosRunning; ++i) pros::delay(10);
+    }
+    if (rollerPosTaskPtr != nullptr && !rollerPosRunning) {
+        delete rollerPosTaskPtr;
+        rollerPosTaskPtr = nullptr;
+    }
+    auto* targetPtr = new RollerTarget(target);
+    rollerPosTaskPtr = new pros::Task(rollerPosTaskFn, targetPtr, TASK_PRIORITY_DEFAULT,
+                                       TASK_STACK_DEPTH_DEFAULT, "rollerPosAsync");
+}
+
+// starts moving rollerPos in the background, returns immediately
+void goHighAsync() { startRollerPosTask(RollerTarget::High); }
+void goMidAsync() { startRollerPosTask(RollerTarget::Mid); }
+void goDownAsync() { startRollerPosTask(RollerTarget::Down); }
+
+// stops whichever rollerPos async move is currently running
+void stopRollerPosAsync() {
+    rollerPosStopRequested = true;
+    for (int i = 0; i < 100 && rollerPosRunning; ++i) pros::delay(10);
+    if (rollerPosTaskPtr != nullptr && !rollerPosRunning) {
+        delete rollerPosTaskPtr;
+        rollerPosTaskPtr = nullptr;
+    }
 }
 
 pros::Motor mfl(-13 , pros::MotorGearset::blue);

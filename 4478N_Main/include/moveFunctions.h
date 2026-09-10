@@ -32,4 +32,12 @@ extern void stopDrivePIDAsync();
 extern void turnToHeadingSmart(float theta, int timeout, lemlib::TurnToHeadingParams params = {}, bool async = true);
 extern void backIntoLongGoalML();
 
+// ---------- mechanism control (callable from autonomous and opcontrol) ----------
+extern void toggleIntPos();
+extern void setCasDegree(double targetDeg);
+extern void setCasDegreeAsync(double targetDeg);
+extern void stopCasAsync();
+extern void intakeDown();
+extern void outtake();
+
 #endif

@@ -228,6 +228,14 @@ void opcontrol()
         {
             intake.move(127); // Intake out
         }
+
+        if (controller.get_digital(E_CONTROLLER_DIGITAL_B)){
+            roller.move(127);
+        }
+        else if(controller.get_digital(E_CONTROLLER_DIGITAL_Y)){
+            roller.move(-127);
+        }
+        
         else
         {
             intake.set_brake_mode(MOTOR_BRAKE_HOLD);
