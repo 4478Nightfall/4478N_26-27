@@ -116,6 +116,8 @@ void stopCasAsync() {
     }
 }
 
+
+
 // runs intake, drops cascade and rollerPos down (cas and rollerPos move in
 // the background so this returns immediately and driving isn't blocked)
 void intakeDown() {
@@ -125,15 +127,9 @@ void intakeDown() {
     goDownAsync();        // Tilt rollerPos all the way down
 }
 
-// reverses intake
-void intake(){
-    intake.move(-127);
-    roller.move(127);
-}
-
-void outtake() {
-    intake.move(127);
-    roller.move(-127);
+void intakeSpin(int vel) {
+    intake.move(vel);
+    roller.move(vel);
 }
 
 double slewStep = 20.0;

@@ -228,6 +228,11 @@ void opcontrol()
         {
             intake.move(127); // Intake out
         }
+        else
+        {
+            intake.set_brake_mode(MOTOR_BRAKE_HOLD);
+            intake.brake(); // Stop intake when neither button is pressed
+        }
 
         if (controller.get_digital(E_CONTROLLER_DIGITAL_B)){
             roller.move(127);
@@ -235,22 +240,17 @@ void opcontrol()
         else if(controller.get_digital(E_CONTROLLER_DIGITAL_Y)){
             roller.move(-127);
         }
-        
-        else
-        {
-            intake.set_brake_mode(MOTOR_BRAKE_HOLD);
-            intake.brake(); // Stop intake when neither button is pressed
+        else if (!controller.get_digital(E_CONTROLLER_DIGITAL_L2)){
+            roller.brake(); // Stop roller when no button driving it is pressed
         }
         if (controller.get_digital(E_CONTROLLER_DIGITAL_R1))
         {
             casL.move(127); // Spin left cas out
-            casR.move(127); // Spin right cas out
             rolMode = true; // change between up and mid values when going up
         }
         else if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
         {
             casL.move(-127); // Spin left cas in
-            casR.move(-127); // Spin right cas in
             rolMode = false; //change bt down and mid val when going down
         }
         else if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
@@ -261,6 +261,26 @@ void opcontrol()
             } else {
                 casL.brake();
             }
+        }
+        else
+        {
+            casL.set_brake_mode(MOTOR_BRAKE_HOLD);
+            casL.brake(); // Stop left cas when neither button is pressed
+        }
+
+        if (controller.get_digital(E_CONTROLLER_DIGITAL_UP))
+        {
+            casR.move(127); // Spin right cas out
+            rolMode = true; // change between up and mid values when going up
+        }
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_DOWN))
+        {
+            casR.move(-127); // Spin right cas in
+            rolMode = false; //change bt down and mid val when going down
+        }
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+        {
+            // Auto-retract cas to the bottom while intaking (R1/R2 above take priority over this)
             if (casR.get_position() > casDownVal) {
                 casR.move(-50);
             } else {
@@ -269,27 +289,25 @@ void opcontrol()
         }
         else
         {
-            casL.set_brake_mode(MOTOR_BRAKE_HOLD);
             casR.set_brake_mode(MOTOR_BRAKE_HOLD);
-            casL.brake(); // Stop left cas when neither button is pressed
             casR.brake(); // Stop right cas when neither button is pressed
         }
 
-       if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_X)){
-        intPos.set_value(!intPos.get_value());
-       }
+    //    if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_X)){
+    //     intPos.set_value(!intPos.get_value());
+    //    }
        
        if (rolMode == false){
         if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_A)){
             if(high == true)
             {
-                goDown();
+                goDownAsync();
             }
             else if (mid == true){
-                goDown();
+                goDownAsync();
             }
             else if (low == true){
-                goMid();
+                goMidAsync();
             }
         }
        }
@@ -298,13 +316,13 @@ void opcontrol()
         if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_A)){
             if(high == true)
             {
-                goMid();
+                goMidAsync();
             }
             else if (mid == true){
-                goHigh();
+                goHighAsync();
             }
             else if (low == true){
-                goMid();
+                goMidAsync();
             }
         }
        }
