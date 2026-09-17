@@ -243,54 +243,53 @@ void opcontrol()
         else if (!controller.get_digital(E_CONTROLLER_DIGITAL_L2)){
             roller.brake(); // Stop roller when no button driving it is pressed
         }
-        if (controller.get_digital(E_CONTROLLER_DIGITAL_R1))
+        
+        // else if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+        // {
+        //     // Auto-retract cas to the bottom while intaking (R1/R2 above take priority over this)
+        //     if (casL.get_position() > casDownVal) {
+        //         casL.move(-50);
+        //     } else {
+        //         casL.brake();
+        //     }
+        // }
+        // else
+        // {
+        //     casL.set_brake_mode(MOTOR_BRAKE_HOLD);
+        //     casL.brake(); // Stop left cas when neither button is pressed
+        // }
+
+        // if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+        // {
+        //     // Auto-retract cas to the bottom while intaking (R1/R2 above take priority over this)
+        //     if (casR.get_position() > casDownVal) {
+        //         casR.move(-50);
+        //     } else {
+        //         casR.brake();
+        //     }
+        // }
+        // else
+        // {
+        //     casR.set_brake_mode(MOTOR_BRAKE_HOLD);
+        //     casR.brake(); // Stop right cas when neither button is pressed
+        // }
+
+        if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
         {
             casL.move(127); // Spin left cas out
+            casR.move(127);
             rolMode = true; // change between up and mid values when going up
         }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_R1))
         {
             casL.move(-127); // Spin left cas in
+            casR.move(-127);
             rolMode = false; //change bt down and mid val when going down
         }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
-        {
-            // Auto-retract cas to the bottom while intaking (R1/R2 above take priority over this)
-            if (casL.get_position() > casDownVal) {
-                casL.move(-50);
-            } else {
-                casL.brake();
-            }
-        }
-        else
-        {
-            casL.set_brake_mode(MOTOR_BRAKE_HOLD);
-            casL.brake(); // Stop left cas when neither button is pressed
-        }
-
-        if (controller.get_digital(E_CONTROLLER_DIGITAL_UP))
-        {
-            casR.move(127); // Spin right cas out
-            rolMode = true; // change between up and mid values when going up
-        }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_DOWN))
-        {
-            casR.move(-127); // Spin right cas in
-            rolMode = false; //change bt down and mid val when going down
-        }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
-        {
-            // Auto-retract cas to the bottom while intaking (R1/R2 above take priority over this)
-            if (casR.get_position() > casDownVal) {
-                casR.move(-50);
-            } else {
-                casR.brake();
-            }
-        }
-        else
-        {
-            casR.set_brake_mode(MOTOR_BRAKE_HOLD);
-            casR.brake(); // Stop right cas when neither button is pressed
+        else{
+            casL.brake();
+            casR.brake();
+        
         }
 
     //    if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_X)){

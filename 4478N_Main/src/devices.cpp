@@ -177,8 +177,8 @@ imu_orientation_e_t DualIMU::get_physical_orientation() const {
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 pros::MotorGroup right_motors({18, 20}, pros::MotorGearset::blue);
 pros::MotorGroup left_motors({13, -14}, pros::MotorGearset::blue);
-pros::Motor casL(-5, pros::MotorGearset::blue);
-pros::Motor casR(11, pros::MotorGearset::blue); // placeholder port until cascade right motor is wired
+pros::Motor casL(-5, pros::MotorGearset::green);
+pros::Motor casR(16, pros::MotorGearset::green); // placeholder port until cascade right motor is wired
 pros::Motor intake(2, pros::MotorGearset::blue);
 pros::Motor roller(10, pros::MotorGearset::green);
 pros::Motor rollerPos(12, pros::MotorGearset::green);
