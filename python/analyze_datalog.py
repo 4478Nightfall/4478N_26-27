@@ -1,17 +1,35 @@
 """Analyze robot datalog data and generate visualizations."""
+import os
+import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
 # Load the data
-fileName = 'datalog.csv'  # CSV is in parent directory when running from python/
+fileName = sys.argv[1] if len(sys.argv) > 1 else 'datalog.csv'  # CSV is in parent directory when running from python/
 try:
     df = pd.read_csv(fileName)
 except FileNotFoundError:
     print(
         f"File '{fileName}' not found. Make sure it's in the same directory as this script.")
     exit(1)
+
+# Save every figure to disk (reliable regardless of GUI backend) in addition
+# to showing it interactively. Each input file gets its own subfolder so
+# multiple datalogs don't overwrite each other's plots.
+_dataset_name = os.path.splitext(os.path.basename(fileName))[0]
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plots', _dataset_name)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+_fig_counter = [0]
+
+
+def save_and_show(name, block=False):
+    _fig_counter[0] += 1
+    path = os.path.join(OUTPUT_DIR, f'{_fig_counter[0]:02d}_{name}.png')
+    plt.savefig(path, dpi=150)
+    print(f"Saved plot: {path}")
+    plt.show(block=block)
 
 print("Columns:", list(df.columns))
 print("\nFirst rows:")
@@ -87,7 +105,7 @@ plt.title('Robot Route (Birdseye View, 2D)')
 plt.axis('equal')
 plt.legend()
 plt.grid(True, alpha=0.3)
-plt.show(block=False)
+save_and_show('birdseye_path')
 
 
 # Plot motor temperatures over time
@@ -112,7 +130,7 @@ ax.set_title('Motor Temperatures Over Time')
 ax.legend()
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.show(block=False)
+save_and_show('motor_temps')
 
 # Plot motor velocities over time
 fig, ax = plt.subplots(figsize=(10, 6))
@@ -138,30 +156,30 @@ ax.set_title('Motor Velocities Over Time (Averaged)')
 ax.legend()
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.show(block=False)
+save_and_show('motor_velocities_avg')
 
-# Plot all 6 individual drive motor velocities overlaid
-individual_motor_bases = ['mfl', 'mml', 'mbl', 'mfr', 'mmr', 'mbr']
+# Plot all individual drive motor velocities overlaid
+individual_motor_bases = ['mfl', 'mbl', 'mfr', 'mbr']
 if all(f'{m}_vel' in df.columns for m in individual_motor_bases):
     fig, ax = plt.subplots(figsize=(14, 8))
-    
+
     # Plot all motor velocities
-    colors = ['blue', 'cyan', 'teal', 'red', 'orange', 'brown']
-    labels = ['Front Left (mfl)', 'Middle Left (mml)', 'Back Left (mbl)', 
-              'Front Right (mfr)', 'Middle Right (mmr)', 'Back Right (mbr)']
-    
+    colors = ['blue', 'teal', 'red', 'brown']
+    labels = ['Front Left (mfl)', 'Back Left (mbl)',
+              'Front Right (mfr)', 'Back Right (mbr)']
+
     for idx, motor_base in enumerate(individual_motor_bases):
         motor_vel = df[f'{motor_base}_vel']
-        ax.plot(df['timestamp'], motor_vel, label=labels[idx], 
+        ax.plot(df['timestamp'], motor_vel, label=labels[idx],
                 color=colors[idx], linewidth=2, alpha=0.8)
-    
+
     ax.set_xlabel('Time (ms)')
     ax.set_ylabel('Velocity (RPM)')
     ax.set_title('All Drive Motor Velocities (Individual Motors Overlaid)')
     ax.legend(loc='best')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.show(block=False)
+    save_and_show('motor_velocities_individual')
 else:
     print("\nWarning: Individual motor velocity columns not found. Available columns:", list(df.columns))
 
@@ -191,7 +209,7 @@ ax.set_title('Motor Positions Over Time')
 ax.legend()
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.show(block=False)
+save_and_show('motor_positions_avg')
 
 # Plot color sensor data over time - COMMENTED OUT (columns don't exist in current CSV)
 # fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 10))
@@ -212,30 +230,34 @@ plt.show(block=False)
 # plt.tight_layout()
 # plt.show(block=False)
 
-# Plot all 6 chassis motor encoders together to detect deviations
-individual_motor_bases = ['mfl', 'mml', 'mbl', 'mfr', 'mmr', 'mbr']
+# Plot all chassis motor encoders together to detect deviations
+individual_motor_bases = ['mfl', 'mbl', 'mfr', 'mbr']
+left_side_motors = ['mfl', 'mbl']
+right_side_motors = ['mfr', 'mbr']
 if all(f'{m}_deg' in df.columns for m in individual_motor_bases):
     fig, ax = plt.subplots(figsize=(14, 8))
-    
+
     # Plot all motors
-    colors = ['blue', 'cyan', 'teal', 'red', 'orange', 'brown']
+    colors = ['blue', 'teal', 'red', 'brown']
     for idx, motor_base in enumerate(individual_motor_bases):
         motor_pos = df[f'{motor_base}_deg']
-        ax.plot(df['timestamp'], motor_pos, label=motor_base, 
+        ax.plot(df['timestamp'], motor_pos, label=motor_base,
                 color=colors[idx], linewidth=2, alpha=0.8)
-    
-    # Calculate average position to detect deviations
-    avg_pos = df[[f'{m}_deg' for m in individual_motor_bases]].mean(axis=1)
-    ax.plot(df['timestamp'], avg_pos, 'k--', label='Average', 
-            linewidth=2, alpha=0.6, zorder=1)
-    
-    # Detect motors that deviate significantly from average
+
+    # Compare each motor against its SIDE PARTNER (not all 4 together, and
+    # not an average that includes itself) - left/right legitimately diverge
+    # during turns, and self-inclusive averaging dilutes a genuinely broken
+    # motor's signal.
+    side_partner = {'mfl': 'mbl', 'mbl': 'mfl', 'mfr': 'mbr', 'mbr': 'mfr'}
+
+    # Detect motors that deviate significantly from their side partner
     max_deviations = []
     problem_motors = []
-    
+
     for idx, motor_base in enumerate(individual_motor_bases):
         motor_pos = df[f'{motor_base}_deg']
-        deviation = motor_pos - avg_pos
+        partner_pos = df[f'{side_partner[motor_base]}_deg']
+        deviation = motor_pos - partner_pos
         max_deviation = deviation.abs().max()
         max_deviations.append((motor_base, max_deviation))
         
@@ -266,8 +288,8 @@ if all(f'{m}_deg' in df.columns for m in individual_motor_bases):
     ax.legend(loc='best')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.show(block=False)
-    
+    save_and_show('motor_deviation_detection')
+
     # Print deviation summary with replacement recommendations
     print("\n" + "="*80)
     print("MOTOR DEVIATION SUMMARY - REPLACEMENT RECOMMENDATIONS")
@@ -290,6 +312,20 @@ if all(f'{m}_deg' in df.columns for m in individual_motor_bases):
     else:
         print("\n✓ All motors operating within acceptable range for accurate autons")
 
+    # A partner-deviation flags BOTH motors on that side equally (relative
+    # comparison can't tell which one is actually broken). Cross-check with
+    # velocity: a motor that never reports rotation despite drawing current
+    # (near-zero mean/std velocity) is the one that's actually dead/slipping.
+    if any(dev >= 3.0 for _, dev in max_deviations):
+        print("\nCross-check: which side motor is actually stuck (near-zero velocity)?")
+        for motor_base in individual_motor_bases:
+            vel = df[f'{motor_base}_vel']
+            cur = df[f'{motor_base}_current']
+            if vel.abs().max() < 1.0 and cur.max() > 0.5:
+                print(f"   ✗ {motor_base}: velocity never leaves ~0 "
+                      f"(max |vel|={vel.abs().max():.2f} RPM) while drawing up to "
+                      f"{cur.max():.2f}A -- likely stripped gear/coupling or dead encoder")
+
 # Plot auton selector position
 fig, ax = plt.subplots(figsize=(10, 6))
 ax.plot(df['timestamp'], df['autonSelector_deg'],
@@ -311,7 +347,7 @@ ax.set_title('Auton Selector Position Over Time')
 ax.legend()
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.show()
+save_and_show('auton_selector')
 
 # Print summary statistics
 print("\nSummary statistics:")
@@ -323,7 +359,7 @@ print("Computed distance:", np.pi * wheelDiameter *
       (df['left_deg'].iloc[-1] - df['left_deg'].iloc[0]))
 
 # Analyze individual motor data if they exist (temp, vel, pos)
-individual_motor_bases = ['mfl', 'mml', 'mbl', 'mfr', 'mmr', 'mbr']
+individual_motor_bases = ['mfl', 'mbl', 'mfr', 'mbr']
 individual_motors = [f'{m}_deg' for m in individual_motor_bases]
 
 # Check if we have the new comprehensive motor data
@@ -336,9 +372,9 @@ if has_detailed_motors:
     print("="*80)
     
     # Plot motor temperatures
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     axes = axes.flatten()
-    
+
     for idx, motor_base in enumerate(individual_motor_bases):
         ax = axes[idx]
         motor_temp = df[f'{motor_base}_temp']
@@ -370,10 +406,10 @@ if has_detailed_motors:
         ax.legend(loc='upper left')
         ax2.legend(loc='upper right')
         ax.grid(True, alpha=0.3)
-    
+
     plt.tight_layout()
-    plt.show(block=False)
-    
+    save_and_show('comprehensive_motor_temp_vel')
+
     # Print motor temperature summary
     print("\nMotor Temperature Analysis:")
     print("-" * 80)
@@ -390,47 +426,47 @@ elif all(col in df.columns for col in individual_motors):
     print("="*80)
     
     # Plot all individual motor positions
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     axes = axes.flatten()
-    
+
     for idx, motor in enumerate(individual_motors):
         ax = axes[idx]
         motor_data = df[motor]
         ax.plot(df['timestamp'], motor_data, label=motor, alpha=0.7)
-        
+
         # Detect anomalies for this motor
         motor_diff = np.abs(np.diff(motor_data))
         motor_threshold = np.mean(motor_diff) + 3 * np.std(motor_diff)
         motor_anomalies = np.where(motor_diff > motor_threshold)[0]
-        
+
         if len(motor_anomalies) > 0:
-            ax.scatter(df['timestamp'].iloc[motor_anomalies+1], 
+            ax.scatter(df['timestamp'].iloc[motor_anomalies+1],
                       motor_data.iloc[motor_anomalies+1],
                       c='red', s=100, marker='X', label=f'Anomalies ({len(motor_anomalies)})', zorder=5)
-        
+
         # Calculate motor synchronization error
-        if idx < 3:  # Left motors
+        if idx < 2:  # Left motors
             avg_left = df['left_deg']
             sync_error = motor_data - avg_left
         else:  # Right motors
             avg_right = df['right_deg']
             sync_error = motor_data - avg_right
-        
+
         max_sync_error = sync_error.max() - sync_error.min()
         ax.set_title(f'{motor}\nMax sync error: {max_sync_error:.2f} deg\nAnomalies: {len(motor_anomalies)}')
         ax.set_xlabel('Time (ms)')
         ax.set_ylabel('Position (deg)')
         ax.legend()
         ax.grid(True, alpha=0.3)
-    
+
     plt.tight_layout()
-    plt.show(block=False)
-    
+    save_and_show('individual_motor_positions')
+
     # Print summary of motor issues
     print("\nMotor Synchronization Issues:")
     print("-" * 80)
     for idx, motor in enumerate(individual_motors):
-        if idx < 3:  # Left motors
+        if idx < 2:  # Left motors
             avg_target = df['left_deg']
         else:  # Right motors
             avg_target = df['right_deg']
@@ -526,8 +562,8 @@ if 'imu_heading' in df.columns:
         ax.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    plt.show(block=False)
-    
+    save_and_show('imu_odometry_analysis')
+
     # Print IMU analysis
     print("\nIMU Analysis:")
     print("-" * 80)
@@ -549,3 +585,6 @@ if 'imu_heading' in df.columns:
         print(f"Horizontal tracker movement: {htracker_change:.2f}°")
         htracker_range = df['hTracker_deg'].max() - df['hTracker_deg'].min()
         print(f"Horizontal tracker range: {htracker_range:.2f}°")
+
+print(f"\nAll plots saved to: {OUTPUT_DIR}")
+plt.show()

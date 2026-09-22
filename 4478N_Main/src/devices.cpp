@@ -175,17 +175,22 @@ imu_orientation_e_t DualIMU::get_physical_orientation() const {
 
 // ---------- devices / lemlib setup ----------
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
-pros::MotorGroup right_motors({18, 20}, pros::MotorGearset::blue);
-pros::MotorGroup left_motors({13, -14}, pros::MotorGearset::blue);
-pros::Motor casL(-5, pros::MotorGearset::green);
-pros::Motor casR(16, pros::MotorGearset::green); // placeholder port until cascade right motor is wired
-pros::Motor intake(2, pros::MotorGearset::blue);
-pros::Motor roller(10, pros::MotorGearset::green);
+pros::Motor mfl(-13 , pros::MotorGearset::blue);
+pros::Motor mbl(-20, pros::MotorGearset::blue);
+pros::Motor mfr(15, pros::MotorGearset::blue);
+pros::Motor mbr(18, pros::MotorGearset::blue);
+pros::MotorGroup right_motors({15, 18}, pros::MotorGearset::blue);
+pros::MotorGroup left_motors({-13, -20}, pros::MotorGearset::blue);
+pros::Motor casL(-11, pros::MotorGearset::green);
+pros::Motor casR(10, pros::MotorGearset::green); // placeholder port until cascade right motor is wired
+pros::Motor intakeBack(-1, pros::MotorGearset::green);
+pros::Motor intakeFront(5, pros::MotorGearset::green);
+pros::Motor roller(9, pros::MotorGearset::green);
 pros::Motor rollerPos(12, pros::MotorGearset::green);
-pros::Rotation tilter(5);
-int highVal = 0;
-int midVal = 10000;
-int downVal = 20000;
+pros::Rotation tilter(8);
+int highVal = 23000;
+int midVal = 27000;
+int downVal = 0;
 int casDownVal = 0;
 bool high;
 bool mid;
@@ -193,13 +198,13 @@ bool low = true;
 
 // moves rollerPos to high
 void goHigh(){
-    while(tilter.get_position() > highVal){
-        rollerPos.move(50);
-    }
+        rollerPos.move(30);
+if(rollerPos.get_position() <= highVal){
     rollerPos.brake();
      low = false;
     high = true;
     mid = false;
+}
 }
 
 // moves rollerPos to mid
@@ -223,13 +228,14 @@ void goMid(){
 
 // moves rollerPos to down
 void goDown(){
-    while(tilter.get_position() < downVal){
-        rollerPos.move(-50);
-    }
+        rollerPos.move(-30);
+
+        if(rollerPos.get_position() <= downVal){
     low = true;
     high = false;
     mid = false;
     rollerPos.brake();
+        }
 }
 
 // async version of goHigh/goMid/goDown - runs in the background so rollerPos
@@ -306,10 +312,7 @@ void stopRollerPosAsync() {
     }
 }
 
-pros::Motor mfl(-13 , pros::MotorGearset::blue);
-pros::Motor mbl(-14, pros::MotorGearset::blue);
-pros::Motor mfr(18, pros::MotorGearset::blue);
-pros::Motor mbr(20, pros::MotorGearset::blue);
+
 pros::Rotation autonSelector(7);
 pros::Rotation hTracker(21);
 pros::Imu imu1(6);

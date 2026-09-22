@@ -121,19 +121,21 @@ void stopCasAsync() {
 // runs intake, drops cascade and rollerPos down (cas and rollerPos move in
 // the background so this returns immediately and driving isn't blocked)
 void intakeDown() {
-    intake.move(-127); // Intake in
+    intakeFront.move(127); // Intake in
+    intakeBack.move(127);
     roller.move(127);
     setCasDegreeAsync(0); // Drop cascade to bottom
     goDownAsync();        // Tilt rollerPos all the way down
 }
 
 void intakeSpin(int vel) {
-    intake.move(vel);
+    intakeFront.move(vel);
+    intakeBack.move(vel);
     roller.move(vel);
 }
 
-double slewStep = 20.0;
-double slewRate = 0.5;
+double slewStep = 15.0;
+double slewRate = 0.2;
 
 double slew(double val, double fwdVal)
 {
@@ -192,9 +194,9 @@ double slew(double val, double fwdVal)
 void drivePID(double fwdVal, double maxSpeedPercent, double timeout)
 {
     
-    double kP = 0.15; 
+    double kP = 0.21; 
     double kI = 0.000000; 
-    double kD = 0.18; 
+    double kD = 0.12; 
 
     const double diameter = 3.25;
     const double pi = 3.14159;
@@ -211,8 +213,6 @@ void drivePID(double fwdVal, double maxSpeedPercent, double timeout)
     mbr.tare_position();
     mfl.tare_position();
     mfr.tare_position();
-    mml.tare_position();
-    mmr.tare_position();
 
     double startTime = pros::millis();
     double error = 0;
@@ -233,20 +233,10 @@ void drivePID(double fwdVal, double maxSpeedPercent, double timeout)
     
     while (inGoal < goalsNeeded)
     {
-        double leftPositions[3] = {
-            mbl.get_position(), mfl.get_position(), mml.get_position()
-        };
-        double rightPositions[3] = {
-            mbr.get_position(), mfr.get_position(), mmr.get_position()
-        };
-        
-        std::nth_element(leftPositions, leftPositions + 1, leftPositions + 3);
-        double leftMedian = leftPositions[1];
-        
-        std::nth_element(rightPositions, rightPositions + 1, rightPositions + 3);
-        double rightMedian = rightPositions[1];
-        
-        double medianPos = (leftMedian + rightMedian)/2;
+        double leftAvg = (mbl.get_position() + mfl.get_position()) / 2;
+        double rightAvg = (mbr.get_position() + mfr.get_position()) / 2;
+
+        double medianPos = (leftAvg + rightAvg)/2;
         double processVariable = medianPos * 360;
         
         error = target - processVariable;
@@ -334,9 +324,9 @@ static void drivePidTaskFn(void* rawArgs) {
     drivePidRunning = true;
     drivePidStopRequested = false;
 
-    double kP = 0.2; 
+    double kP = 0.21; 
     double kI = 0.000000; 
-    double kD = 0.17; 
+    double kD = 0.12; 
 
     const double diameter = 3.25;
     const double pi = 3.14159;
@@ -353,8 +343,6 @@ static void drivePidTaskFn(void* rawArgs) {
     mbr.tare_position();
     mfl.tare_position();
     mfr.tare_position();
-    mml.tare_position();
-    mmr.tare_position();
 
     double startTime = pros::millis();
     double error = 0;
@@ -374,20 +362,10 @@ static void drivePidTaskFn(void* rawArgs) {
     bool hasMoved = false;
 
     while (inGoal < goalsNeeded && !drivePidStopRequested) {
-        double leftPositions[3] = {
-            mbl.get_position(), mfl.get_position(), mml.get_position()
-        };
-        double rightPositions[3] = {
-            mbr.get_position(), mfr.get_position(), mmr.get_position()
-        };
-        
-        std::nth_element(leftPositions, leftPositions + 1, leftPositions + 3);
-        double leftMedian = leftPositions[1];
-        
-        std::nth_element(rightPositions, rightPositions + 1, rightPositions + 3);
-        double rightMedian = rightPositions[1];
-        
-        double medianPos = (leftMedian + rightMedian);
+        double leftAvg = (mbl.get_position() + mfl.get_position()) / 2;
+        double rightAvg = (mbr.get_position() + mfr.get_position()) / 2;
+
+        double medianPos = (leftAvg + rightAvg);
         double processVariable = medianPos * 360;
         
         error = target - processVariable;

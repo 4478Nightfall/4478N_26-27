@@ -36,8 +36,6 @@ void drivePIDTune(double kP, double kI, double kD, double fwdVal, double maxSpee
     mbr.tare_position();
     mfl.tare_position();
     mfr.tare_position();
-    mml.tare_position();
-    mmr.tare_position();
 
     double startTime = pros::millis();
     double error = 0;
@@ -63,25 +61,11 @@ void drivePIDTune(double kP, double kI, double kD, double fwdVal, double maxSpee
     
     while (inGoal < goalsNeeded)
     {
-        // Use MEDIAN of left side motors and MEDIAN of right side motors separately
-        // Then average the two medians - this accounts for differences between left/right sides
-        double leftPositions[3] = {
-            mbl.get_position(), mfl.get_position(), mml.get_position()
-        };
-        double rightPositions[3] = {
-            mbr.get_position(), mfr.get_position(), mmr.get_position()
-        };
-        
-        // Find median of left side (middle of 3 values is index 1)
-        std::nth_element(leftPositions, leftPositions + 1, leftPositions + 3);
-        double leftMedian = leftPositions[1];
-        
-        // Find median of right side (middle of 3 values is index 1)
-        std::nth_element(rightPositions, rightPositions + 1, rightPositions + 3);
-        double rightMedian = rightPositions[1];
-        
-        // Average the two medians
-        double medianPos = (leftMedian + rightMedian)/2;
+        // Average left side motors and right side motors separately, then average the two sides
+        double leftAvg = (mbl.get_position() + mfl.get_position()) / 2;
+        double rightAvg = (mbr.get_position() + mfr.get_position()) / 2;
+
+        double medianPos = (leftAvg + rightAvg)/2;
         double processVariable = medianPos * 360;
         
         error = target - processVariable;
@@ -168,7 +152,15 @@ void tuningLoop(){
 
 }
 
+volatile bool pidTuningActive = false;
+
 void pidTuningMode() {
+    // Stop the background screen task from overwriting the LCD while tuning
+    pidTuningActive = true;
+    pros::delay(150);
+    // lcd::clear() deletes the LLEMU label objects and crashes the next print, so clear line by line
+    for (int line = 0; line < 8; line++) pros::lcd::clear_line(line);
+
     // Reset all PID values to zero when entering tuning mode
     kP = 0.0;
     kI = 0.0;
@@ -274,15 +266,20 @@ void pidTuningMode() {
         
         if (r2Pressed && !lastR2State) {
             // Test sequence: 48 in forward, -24 in back, 12 in forward
-            drivePIDTune(kP, kI, kD, 48.0, 100, 5000);
+            drivePIDTune(kP, kI, kD, 48.0, 100, 3000);
             pros::delay(500);
-            drivePIDTune(kP, kI, kD, -24.0, 100, 5000);
+            drivePIDTune(kP, kI, kD, -24.0, 100, 3000);
             pros::delay(500);
-            drivePIDTune(kP, kI, kD, 12.0, 100, 5000);
+            drivePIDTune(kP, kI, kD, 12.0, 100, 3000);
+            drivePIDTune(kP, kI, kD, -36.0, 100, 3000);
+
         }
         
         lastR2State = r2Pressed;
-        
+
         pros::delay(20);
     }
+
+    for (int line = 0; line < 8; line++) pros::lcd::clear_line(line);
+    pidTuningActive = false;
 }

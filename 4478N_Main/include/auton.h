@@ -4,6 +4,7 @@
 #include "main.h"
 using namespace pros;
 
+extern void dataloggingRoute();
 extern void leftFarClose();
 
 #endif

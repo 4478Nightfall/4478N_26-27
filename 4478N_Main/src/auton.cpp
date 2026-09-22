@@ -19,11 +19,19 @@ using namespace lemlib;
 
 // ---------- auton routines ----------
 
+void dataloggingRoute(){
+    startDatalogging();
+    chassis.setPose(0,0,0);
+    drivePID(48,100,2000);
+    drivePID(-48,100,2000);
+    stopDatalogging();
+}
+
 void leftFarClose(){
-    chassis.setPose(-12,65,180);
+    chassis.setPose(-12,-65,180);
     drivePID(-10,100,500);
     drivePID(10,100,500);//toggle
-    chassis.setPose(-12,65,180);
+    chassis.setPose(-12,-65,180);
     chassis.moveToPose(-23,-47,180,2000,{.forwards = false, .minSpeed = 50}, true);//go to first score
     setCasDegreeAsync(100);
     goMidAsync();

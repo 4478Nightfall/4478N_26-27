@@ -5,6 +5,7 @@
 #include "auton.h"
 #include "autonSelector.h"
 #include "moveFunctions.h"
+#include "PIDtuner.h"
 #include "pros/misc.h"
 #include "pros/motors.h"
 #include <cmath>  // For fabs()
@@ -37,29 +38,33 @@ void initialize()
 
     pros::Task screen_task([&]() {
         while (true) {
-            const Pose lem = chassis.getPose();
-            pros::lcd::print(0, "LEM %5.1f %5.1f h%4.0f", lem.x, lem.y, lem.theta);
+            if (pidTuningActive) {
+                pros::delay(100);
+                continue;
+            }
+            // const Pose lem = chassis.getPose();
+            // pros::lcd::print(0, "LEM %5.1f %5.1f h%4.0f", lem.x, lem.y, lem.theta);
 
-            auto distLine = [&](int line, const char* tag, Distance* dev) {
-                if (dev == nullptr) {
-                    pros::lcd::print(line, "%s --- no dev", tag);
-                    return;
-                }
-                const std::int32_t mm = dev->get();
-                const int sz = dev->get_object_size();
-                if (mm >= 0) {
-                    pros::lcd::print(line, "%s %5.1fin s%3d", tag, static_cast<double>(mm) / 25.4, sz);
-                } else {
-                    pros::lcd::print(line, "%s ---- s%3d", tag, sz);
-                }
-            };
-            distLine(2, "F", frontDistance);
-            distLine(3, "B", backDistancePtr);
-            distLine(4, "L", leftDistance);
-            distLine(5, "R", rightDistance);
+            // auto distLine = [&](int line, const char* tag, Distance* dev) {
+            //     if (dev == nullptr) {
+            //         pros::lcd::print(line, "%s --- no dev", tag);
+            //         return;
+            //     }
+            //     const std::int32_t mm = dev->get();
+            //     const int sz = dev->get_object_size();
+            //     if (mm >= 0) {
+            //         pros::lcd::print(line, "%s %5.1fin s%3d", tag, static_cast<double>(mm) / 25.4, sz);
+            //     } else {
+            //         pros::lcd::print(line, "%s ---- s%3d", tag, sz);
+            //     }
+            // };
+            // distLine(2, "F", frontDistance);
+            // distLine(3, "B", backDistancePtr);
+            // distLine(4, "L", leftDistance);
+            // distLine(5, "R", rightDistance);
 
-            pros::lcd::print(6, "dist rst: opctl B/Dpad/Y");
-            pros::lcd::print(7, "raw in, obj sz");
+            // pros::lcd::print(6, "dist rst: opctl B/Dpad/Y");
+            // pros::lcd::print(7, "raw in, obj sz");
             pros::delay(100);
         }
     });
@@ -100,11 +105,12 @@ void competition_initialize() {}
 void autonomous()
 {
     
-    int selection = getAutonSelection(); // Get selected auton routine
+    // int selection = getAutonSelection(); // Get selected auton routine
     left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
-    intPos.set_value(LOW);
+    // intPos.set_value(LOW);
 
+    dataloggingRoute();
 
     // Run the selected autonomous routine
     // switch (selection)
@@ -202,9 +208,15 @@ void opcontrol()
 
         casL.set_brake_mode(MOTOR_BRAKE_HOLD);
         casR.set_brake_mode(MOTOR_BRAKE_HOLD);
-        intake.set_brake_mode(MOTOR_BRAKE_HOLD);
+        intakeFront.set_brake_mode(MOTOR_BRAKE_HOLD);
+        intakeBack.set_brake_mode(MOTOR_BRAKE_HOLD);
         right_motors.set_brake_mode(MOTOR_BRAKE_COAST); // Coast for smoother drive
         left_motors.set_brake_mode(MOTOR_BRAKE_COAST);
+
+        // Hold X to enter the PID tuner (blocks driving until B is pressed to exit)
+        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
+            pidTuningMode();
+        }
 
         // Get joystick values for tank drive
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
@@ -219,32 +231,41 @@ void opcontrol()
 
         // Intake: Y (middle-goal spin) takes priority over R2/R1.
         
-        if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+        if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
         {
-            intake.move(-127); // Intake in
+            intakeFront.move(127); // Intake in
+            intakeBack.move(127);
             roller.move(127);
         }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L1))
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_R1))
         {
-            intake.move(127); // Intake out
+            intakeFront.move(-127); // Intake out
+            intakeBack.move(-127);
+            roller.move(-127);
+        }
+        else if(controller.get_digital(E_CONTROLLER_DIGITAL_DOWN)){
+            intakeFront.move(-127); // matchload
+            intakeBack.move(127);
+            roller.move(127);
         }
         else
         {
-            intake.set_brake_mode(MOTOR_BRAKE_HOLD);
-            intake.brake(); // Stop intake when neither button is pressed
+            intakeFront.set_brake_mode(MOTOR_BRAKE_HOLD);
+            intakeBack.set_brake_mode(MOTOR_BRAKE_HOLD);
+            intakeFront.brake(); // Stop intake when neither button is pressed
+            intakeBack.brake(); // Stop intake when neither button is pressed
         }
-
         if (controller.get_digital(E_CONTROLLER_DIGITAL_B)){
             roller.move(127);
         }
         else if(controller.get_digital(E_CONTROLLER_DIGITAL_Y)){
             roller.move(-127);
         }
-        else if (!controller.get_digital(E_CONTROLLER_DIGITAL_L2)){
+        else if (!controller.get_digital(E_CONTROLLER_DIGITAL_R2)){
             roller.brake(); // Stop roller when no button driving it is pressed
         }
         
-        // else if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+        // else if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
         // {
         //     // Auto-retract cas to the bottom while intaking (R1/R2 above take priority over this)
         //     if (casL.get_position() > casDownVal) {
@@ -259,7 +280,7 @@ void opcontrol()
         //     casL.brake(); // Stop left cas when neither button is pressed
         // }
 
-        // if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+        // if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
         // {
         //     // Auto-retract cas to the bottom while intaking (R1/R2 above take priority over this)
         //     if (casR.get_position() > casDownVal) {
@@ -274,13 +295,13 @@ void opcontrol()
         //     casR.brake(); // Stop right cas when neither button is pressed
         // }
 
-        if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
+        if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
         {
             casL.move(127); // Spin left cas out
             casR.move(127);
             rolMode = true; // change between up and mid values when going up
         }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_R1))
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L1))
         {
             casL.move(-127); // Spin left cas in
             casR.move(-127);
