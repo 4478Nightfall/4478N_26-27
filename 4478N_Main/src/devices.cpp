@@ -10,8 +10,6 @@
 #include <string>
 #include <iostream>
 #include <thread>
-#include <atomic>
-#include <memory>
 using namespace pros;
 using namespace lemlib;
 
@@ -175,148 +173,58 @@ imu_orientation_e_t DualIMU::get_physical_orientation() const {
 
 // ---------- devices / lemlib setup ----------
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
-pros::Motor mfl(-13 , pros::MotorGearset::blue);
+pros::Motor mfl(-2 , pros::MotorGearset::blue);
 pros::Motor mbl(-20, pros::MotorGearset::blue);
-pros::Motor mfr(15, pros::MotorGearset::blue);
-pros::Motor mbr(18, pros::MotorGearset::blue);
-pros::MotorGroup right_motors({15, 18}, pros::MotorGearset::blue);
-pros::MotorGroup left_motors({-13, -20}, pros::MotorGearset::blue);
+pros::Motor mfr(13, pros::MotorGearset::blue);
+pros::Motor mbr(16, pros::MotorGearset::blue);
+pros::MotorGroup right_motors({13, 16}, pros::MotorGearset::blue);
+pros::MotorGroup left_motors({-2, -20}, pros::MotorGearset::blue);
 pros::Motor casL(-11, pros::MotorGearset::green);
 pros::Motor casR(10, pros::MotorGearset::green); // placeholder port until cascade right motor is wired
-pros::Motor intakeBack(-1, pros::MotorGearset::green);
-pros::Motor intakeFront(5, pros::MotorGearset::green);
-pros::Motor roller(9, pros::MotorGearset::green);
-pros::Motor rollerPos(12, pros::MotorGearset::green);
-pros::Rotation tilter(8);
-int highVal = 23000;
-int midVal = 27000;
+pros::Motor intake(-1, pros::MotorGearset::green); // reversed
+pros::Motor roller(14, pros::MotorGearset::green);
+pros::Motor tilter(-17, pros::MotorGearset::green); // tilter position is read from this motor's encoder
+// tilter targets in motor encoder degrees (0 = fully down at boot).
+// TODO: re-tune highVal/midVal on the robot - these were converted from the old rotation sensor centidegrees
+int highVal = 1400;
+int midVal = 1100;
 int downVal = 0;
-int casDownVal = 0;
+int tilterSpeed = 127; // max rpm used by move_absolute (green cartridge tops out at 200)
+int casDownVal = 3;
 bool high;
 bool mid;
 bool low = true;
 
-// moves rollerPos to high
+// move_absolute only sets the target and returns immediately - the motor's
+// internal controller drives to it, so none of these block or need a task.
+// high/mid/low track the last commanded target, not whether it's been reached.
 void goHigh(){
-        rollerPos.move(30);
-if(rollerPos.get_position() <= highVal){
-    rollerPos.brake();
-     low = false;
+    
+    tilter.move_absolute(highVal, tilterSpeed);
+    low = false;
     high = true;
     mid = false;
 }
-}
 
-// moves rollerPos to mid
 void goMid(){
-        while(tilter.get_position() > midVal){
-            rollerPos.move(50);
-       }
-       rollerPos.brake();
-        low = false;
-    high = false;
-    mid = true;
-
-       while(tilter.get_position() < midVal){
-            rollerPos.move(-50);
-       }
-       rollerPos.brake();
-        low = false;
+    tilter.move_absolute(midVal, tilterSpeed);
+    low = false;
     high = false;
     mid = true;
 }
 
-// moves rollerPos to down
 void goDown(){
-        rollerPos.move(-30);
-
-        if(rollerPos.get_position() <= downVal){
+    tilter.move_absolute(downVal, tilterSpeed);
     low = true;
     high = false;
     mid = false;
-    rollerPos.brake();
-        }
-}
-
-// async version of goHigh/goMid/goDown - runs in the background so rollerPos
-// can move at the same time as driving or other tasks
-enum class RollerTarget { High, Mid, Down };
-
-static std::atomic<bool> rollerPosStopRequested(false);
-static std::atomic<bool> rollerPosRunning(false);
-static pros::Task* rollerPosTaskPtr = nullptr;
-
-static void rollerPosTaskFn(void* rawTarget) {
-    std::unique_ptr<RollerTarget> targetPtr(reinterpret_cast<RollerTarget*>(rawTarget));
-    RollerTarget target = *targetPtr;
-    rollerPosRunning = true;
-    rollerPosStopRequested = false;
-
-    if (target == RollerTarget::High) {
-        while (tilter.get_position() > highVal && !rollerPosStopRequested) {
-            rollerPos.move(50);
-            pros::delay(20);
-        }
-    } else if (target == RollerTarget::Mid) {
-        while (tilter.get_position() > midVal && !rollerPosStopRequested) {
-            rollerPos.move(50);
-            pros::delay(20);
-        }
-        rollerPos.brake();
-        while (tilter.get_position() < midVal && !rollerPosStopRequested) {
-            rollerPos.move(-50);
-            pros::delay(20);
-        }
-    } else {
-        while (tilter.get_position() < downVal && !rollerPosStopRequested) {
-            rollerPos.move(-50);
-            pros::delay(20);
-        }
-    }
-    rollerPos.brake();
-
-    if (!rollerPosStopRequested) {
-        low = (target == RollerTarget::Down);
-        high = (target == RollerTarget::High);
-        mid = (target == RollerTarget::Mid);
-    }
-    rollerPosRunning = false;
-}
-
-static void startRollerPosTask(RollerTarget target) {
-    if (rollerPosRunning) {
-        rollerPosStopRequested = true;
-        for (int i = 0; i < 50 && rollerPosRunning; ++i) pros::delay(10);
-    }
-    if (rollerPosTaskPtr != nullptr && !rollerPosRunning) {
-        delete rollerPosTaskPtr;
-        rollerPosTaskPtr = nullptr;
-    }
-    auto* targetPtr = new RollerTarget(target);
-    rollerPosTaskPtr = new pros::Task(rollerPosTaskFn, targetPtr, TASK_PRIORITY_DEFAULT,
-                                       TASK_STACK_DEPTH_DEFAULT, "rollerPosAsync");
-}
-
-// starts moving rollerPos in the background, returns immediately
-void goHighAsync() { startRollerPosTask(RollerTarget::High); }
-void goMidAsync() { startRollerPosTask(RollerTarget::Mid); }
-void goDownAsync() { startRollerPosTask(RollerTarget::Down); }
-
-// stops whichever rollerPos async move is currently running
-void stopRollerPosAsync() {
-    rollerPosStopRequested = true;
-    for (int i = 0; i < 100 && rollerPosRunning; ++i) pros::delay(10);
-    if (rollerPosTaskPtr != nullptr && !rollerPosRunning) {
-        delete rollerPosTaskPtr;
-        rollerPosTaskPtr = nullptr;
-    }
 }
 
 
 pros::Rotation autonSelector(7);
 pros::Rotation hTracker(21);
-pros::Imu imu1(6);
-pros::Imu imu2(18);
+pros::Imu imu1(7);
+pros::Imu imu2(6);
 DualIMU imu(&imu1, &imu2); // combined imu object
 
 pros::Distance frontDistanceSensor(8);
@@ -347,9 +255,9 @@ lemlib::OdomSensors sensors(nullptr,
                             &imu1
 );
 
-lemlib::ControllerSettings lateral_controller(50,
+lemlib::ControllerSettings lateral_controller(17,
                                               0,
-                                              12,
+                                              9,
                                               0,
                                               1,
                                               100,
@@ -359,7 +267,7 @@ lemlib::ControllerSettings lateral_controller(50,
 
 lemlib::ControllerSettings angular_controller(2,
                                               0,
-                                              11.5,
+                                              8,
                                               0,
                                               2,
                                               200,

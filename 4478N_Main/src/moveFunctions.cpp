@@ -43,94 +43,55 @@ void rollerSpin(int vel){
     roller.move(vel);
 }
 
-// moves cas motors to a degree
-void setCasDegree(double targetDeg) {
-    const double tolerance = 1.0; // degrees
+// moves cas motors to a degree. move_absolute hands the target to the motor's
+// built-in position controller, which ramps down and keeps holding the target
+// on its own - no software tolerance or brake latch, so nothing to oscillate
+static const int casMaxRpm = 200; // green cartridge
 
-    while (fabs(casL.get_position() - targetDeg) > tolerance ||
-           fabs(casR.get_position() - targetDeg) > tolerance) {
-        if (casL.get_position() > targetDeg + tolerance) casL.move(-50);
-        else if (casL.get_position() < targetDeg - tolerance) casL.move(50);
-        else casL.brake();
-
-        if (casR.get_position() > targetDeg + tolerance) casR.move(-50);
-        else if (casR.get_position() < targetDeg - tolerance) casR.move(50);
-        else casR.brake();
-    }
-    casL.brake();
-    casR.brake();
+static void casGoTo(double targetDeg) {
+    casL.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    casR.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    casL.move_absolute(targetDeg, casMaxRpm);
+    casR.move_absolute(targetDeg, casMaxRpm);
 }
 
-// async version of setCasDegree - runs in the background so cas can move at
-// the same time as driving or other tasks
-static std::atomic<bool> casStopRequested(false);
-static std::atomic<bool> casRunning(false);
-static pros::Task* casTaskPtr = nullptr;
-
-static void casTaskFn(void* rawTarget) {
-    std::unique_ptr<double> targetPtr(reinterpret_cast<double*>(rawTarget));
-    double targetDeg = *targetPtr;
-    casRunning = true;
-    casStopRequested = false;
-
-    const double tolerance = 1.0; // degrees
-    while ((fabs(casL.get_position() - targetDeg) > tolerance ||
-            fabs(casR.get_position() - targetDeg) > tolerance) && !casStopRequested) {
-        if (casL.get_position() > targetDeg + tolerance) casL.move(-50);
-        else if (casL.get_position() < targetDeg - tolerance) casL.move(50);
-        else casL.brake();
-
-        if (casR.get_position() > targetDeg + tolerance) casR.move(-50);
-        else if (casR.get_position() < targetDeg - tolerance) casR.move(50);
-        else casR.brake();
-
+// blocking version - returns once both cas motors have arrived (or after 2s).
+// the motors keep holding the target after this returns.
+void setCasDegree(double targetDeg) {
+    casGoTo(targetDeg);
+    uint32_t start = pros::millis();
+    while ((fabs(casL.get_position() - targetDeg) > 1.0 ||
+            fabs(casR.get_position() - targetDeg) > 1.0) &&
+           pros::millis() - start < 2000) {
         pros::delay(20);
     }
+}
+
+// non-blocking version - sets the target and returns immediately so cas can
+// move at the same time as driving or other tasks
+void setCasDegreeAsync(double targetDeg) {
+    casGoTo(targetDeg);
+}
+
+// stops cas where it currently is
+void stopCasAsync() {
     casL.brake();
     casR.brake();
-    casRunning = false;
-}
-
-// starts moving cas to a degree in the background, returns immediately
-void setCasDegreeAsync(double targetDeg) {
-    if (casRunning) {
-        casStopRequested = true;
-        for (int i = 0; i < 50 && casRunning; ++i) pros::delay(10);
-    }
-    if (casTaskPtr != nullptr && !casRunning) {
-        delete casTaskPtr;
-        casTaskPtr = nullptr;
-    }
-    auto* targetPtr = new double(targetDeg);
-    casTaskPtr = new pros::Task(casTaskFn, targetPtr, TASK_PRIORITY_DEFAULT,
-                                 TASK_STACK_DEPTH_DEFAULT, "setCasDegreeAsync");
-}
-
-// stops whichever cas async move is currently running
-void stopCasAsync() {
-    casStopRequested = true;
-    for (int i = 0; i < 100 && casRunning; ++i) pros::delay(10);
-    if (casTaskPtr != nullptr && !casRunning) {
-        delete casTaskPtr;
-        casTaskPtr = nullptr;
-    }
 }
 
 
 
-// runs intake, drops cascade and rollerPos down (cas and rollerPos move in
+// runs intake, drops cascade and tilter down (cas and tilter move in
 // the background so this returns immediately and driving isn't blocked)
 void intakeDown() {
-    intakeFront.move(127); // Intake in
-    intakeBack.move(127);
+    intake.move(127); // Intake in
     roller.move(127);
     setCasDegreeAsync(0); // Drop cascade to bottom
-    goDownAsync();        // Tilt rollerPos all the way down
+    goDown();        // Tilt tilter all the way down
 }
 
 void intakeSpin(int vel) {
-    intakeFront.move(vel);
-    intakeBack.move(vel);
+    intake.move(vel);
     roller.move(vel);
 }
 

@@ -27,42 +27,39 @@ void dataloggingRoute(){
     stopDatalogging();
 }
 
-void leftFarClose(){
+void PIDtuning(){
+    chassis.setPose(0,0,0);
+    chassis.moveToPose(0,48,0,3000,{});
+    chassis.moveToPose(0,24,0,2000,{.forwards = false,.minSpeed = 50});
+    turnToHeadingSmart(90,800);
+    turnToHeadingSmart(45,800);
+}
+
+void allianceLeft(){
     chassis.setPose(-12,-65,180);
-    drivePID(-10,100,500);
+
+    drivePID(-5,100,300);
     drivePID(10,100,500);//toggle
-    chassis.setPose(-12,-65,180);
-    chassis.moveToPose(-23,-47,180,2000,{.forwards = false, .minSpeed = 50}, true);//go to first score
-    setCasDegreeAsync(100);
-    goMidAsync();
-    toggleIntPos();
+    drivePID(-5,100,300);
+    drivePID(10,100,800);//toggle
+    intakeSpin(127);
+    chassis.setPose(-15,-65,180);
+        chassis.moveToPose(-19,-51,160,2000,{.forwards = false}, true);//go to first score
+    goMid();
     delay(1000);
-    rollerSpin(-70); //score first pin
-    delay(200);
+    rollerSpin(-127); //score first pin
+    delay(1000);
     rollerSpin(0);
     goHigh();
-    turnToHeadingSmart(180,600); 
-    toggleIntPos();
-    drivePIDAsync(24,60,1500);// go to 3 stack
-    intakeDown();
-    delay(1500);
-    setCasDegreeAsync(300);
-    goMidAsync();
-    chassis.setPose(-24,65,180);
-    chassis.moveToPose(-23,-47,180,2000,{.forwards = false,.minSpeed = 60}, false); // go to goal 2 
-    rollerSpin(-70); // score second pin
-    goHighAsync();
-    drivePID(10,100,700);
-    intakeDown();
-    resetOdom(true,false,false,true);
-    chassis.turnToPoint(-44,-49,800);// face last pin
-    chassis.moveToPose(-44,-49,80, 800);
-    delay(300);
-    chassis.turnToHeading(-95,800,{.maxSpeed = 100});
-    setCasDegreeAsync(500);
-    goMidAsync();
-    chassis.moveToPose(-23,-47,-90,2000,{.forwards = false,.minSpeed = 60}, false); // go to goal 3 
-    rollerSpin(-70);
+    turnToHeadingSmart(270,1200); 
+ 
+    chassis.setPose(-30,-54,chassis.getPose().theta);
+    drivePID(10,100,500);
+    chassis.turnToPoint(-46,-47,2000,{.forwards = false});
+    chassis.moveToPose(-39,-47,90,2000,{.forwards = false});//go to second score
+    goDown();
+    drivePID(10,100,800);
+    
      
 
 

@@ -28,6 +28,9 @@ void initialize()
     pros::delay(100);           // Allow sensor to stabilize
 
     intPos.set_value(LOW); // Set back gate to default position (closed/down)
+    tilter.tare_position(); // Reset tilter position to zero
+    casL.tare_position();
+    casR.tare_position();
  
 
     // Add a small delay to ensure solenoid has time to respond
@@ -109,8 +112,7 @@ void autonomous()
     left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     // intPos.set_value(LOW);
-
-    dataloggingRoute();
+    allianceLeft();
 
     // Run the selected autonomous routine
     // switch (selection)
@@ -200,6 +202,11 @@ void opcontrol()
     bool wasAPressed = false;
     bool rolMode; //change between settings for roller position
 
+    // LEFT score macro state: roller out + cas up, then tilter high after a delay
+    const uint32_t leftHighDelayMs = 500;
+    uint32_t leftStartTime = 0;
+    bool leftHighSent = false;
+
     // Main driver control loop
     while (true)
     {
@@ -208,8 +215,9 @@ void opcontrol()
 
         casL.set_brake_mode(MOTOR_BRAKE_HOLD);
         casR.set_brake_mode(MOTOR_BRAKE_HOLD);
-        intakeFront.set_brake_mode(MOTOR_BRAKE_HOLD);
-        intakeBack.set_brake_mode(MOTOR_BRAKE_HOLD);
+        intake.set_brake_mode(MOTOR_BRAKE_HOLD);
+        tilter.set_brake_mode(MOTOR_BRAKE_HOLD);
+        roller.set_brake_mode(MOTOR_BRAKE_HOLD);
         right_motors.set_brake_mode(MOTOR_BRAKE_COAST); // Coast for smoother drive
         left_motors.set_brake_mode(MOTOR_BRAKE_COAST);
 
@@ -229,123 +237,124 @@ void opcontrol()
         // Move the robot using tank drive
         chassis.tank(leftY, rightY);
 
+        // LEFT macro: outtake roller while cas goes up, tilter goes high after leftHighDelayMs.
+        // While held it overrides the roller and cas controls below.
+        bool leftHeld = controller.get_digital(E_CONTROLLER_DIGITAL_LEFT);
+        if (leftHeld) {
+            if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_LEFT)) {
+                leftStartTime = pros::millis();
+                leftHighSent = false;
+            }
+            if (!leftHighSent && pros::millis() - leftStartTime >= leftHighDelayMs) {
+                goHigh();
+                leftHighSent = true;
+            }
+        }
+
         // Intake: Y (middle-goal spin) takes priority over R2/R1.
         
-        if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
+        if (leftHeld)
         {
-            intakeFront.move(127); // Intake in
-            intakeBack.move(127);
+            roller.move(-127); // Roller out
+        }
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
+        {
+            intake.move(127); // Intake in
             roller.move(127);
+            casL.move_absolute(0, -127);
+            casR.move_absolute(0, -127);
         }
         else if (controller.get_digital(E_CONTROLLER_DIGITAL_R1))
         {
-            intakeFront.move(-127); // Intake out
-            intakeBack.move(-127);
+            intake.move(-127); // Intake out
             roller.move(-127);
         }
-        else if(controller.get_digital(E_CONTROLLER_DIGITAL_DOWN)){
-            intakeFront.move(-127); // matchload
-            intakeBack.move(127);
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_B)){
             roller.move(127);
+        }
+        else if(controller.get_digital(E_CONTROLLER_DIGITAL_A)){
+            roller.move(-127);
         }
         else
         {
-            intakeFront.set_brake_mode(MOTOR_BRAKE_HOLD);
-            intakeBack.set_brake_mode(MOTOR_BRAKE_HOLD);
-            intakeFront.brake(); // Stop intake when neither button is pressed
-            intakeBack.brake(); // Stop intake when neither button is pressed
-        }
-        if (controller.get_digital(E_CONTROLLER_DIGITAL_B)){
-            roller.move(127);
-        }
-        else if(controller.get_digital(E_CONTROLLER_DIGITAL_Y)){
-            roller.move(-127);
-        }
-        else if (!controller.get_digital(E_CONTROLLER_DIGITAL_R2)){
+            intake.set_brake_mode(MOTOR_BRAKE_HOLD);
+            intake.brake(); // Stop intake when neither button is pressed
             roller.brake(); // Stop roller when no button driving it is pressed
         }
         
-        // else if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
-        // {
-        //     // Auto-retract cas to the bottom while intaking (R1/R2 above take priority over this)
-        //     if (casL.get_position() > casDownVal) {
-        //         casL.move(-50);
-        //     } else {
-        //         casL.brake();
-        //     }
-        // }
-        // else
-        // {
-        //     casL.set_brake_mode(MOTOR_BRAKE_HOLD);
-        //     casL.brake(); // Stop left cas when neither button is pressed
-        // }
 
-        // if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
-        // {
-        //     // Auto-retract cas to the bottom while intaking (R1/R2 above take priority over this)
-        //     if (casR.get_position() > casDownVal) {
-        //         casR.move(-50);
-        //     } else {
-        //         casR.brake();
-        //     }
-        // }
-        // else
-        // {
-        //     casR.set_brake_mode(MOTOR_BRAKE_HOLD);
-        //     casR.brake(); // Stop right cas when neither button is pressed
-        // }
-
-        if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+       
+       if (leftHeld)
+        {
+            casL.move(127); // Cas up
+            casR.move(127);
+        }
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
         {
             casL.move(127); // Spin left cas out
             casR.move(127);
-            rolMode = true; // change between up and mid values when going up
         }
         else if (controller.get_digital(E_CONTROLLER_DIGITAL_L1))
         {
-            casL.move(-127); // Spin left cas in
-            casR.move(-127);
-            rolMode = false; //change bt down and mid val when going down
+            // Spin cas in, but stop both once either hits the 0 floor
+            if (casL.get_position() <= 0 || casR.get_position() <= 0) {
+                casL.brake();
+                casR.brake();
+            } else {
+                casL.move(-127);
+                casR.move(-127);
+            }
         }
-        else{
+        else if(!controller.get_digital(E_CONTROLLER_DIGITAL_L1) && !controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+        {
             casL.brake();
             casR.brake();
         
         }
 
-    //    if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_X)){
-    //     intPos.set_value(!intPos.get_value());
-    //    }
+        if (casL.get_position() > casDownVal) {
+            rolMode = true;
+        } else {
+            rolMode = false;
+        }
        
        if (rolMode == false){
-        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_A)){
+        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_DOWN)){
             if(high == true)
             {
-                goDownAsync();
+                goDown();
             }
             else if (mid == true){
-                goDownAsync();
+                goDown();
             }
             else if (low == true){
-                goMidAsync();
+                goMid();
+            }
+            else{
+                tilter.brake();
             }
         }
        }
 
        if (rolMode == true){
-        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_A)){
+        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_DOWN)){
             if(high == true)
             {
-                goMidAsync();
+                goMid();
             }
             else if (mid == true){
-                goHighAsync();
+                goHigh();
             }
             else if (low == true){
-                goMidAsync();
+                goMid();
+            }
+            else{
+                tilter.brake();
             }
         }
        }
+
+       
        
         // delay to save resources
         pros::delay(25);

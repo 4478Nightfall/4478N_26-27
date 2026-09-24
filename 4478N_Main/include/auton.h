@@ -5,6 +5,7 @@
 using namespace pros;
 
 extern void dataloggingRoute();
-extern void leftFarClose();
+extern void PIDtuning();
+extern void allianceLeft();
 
 #endif
