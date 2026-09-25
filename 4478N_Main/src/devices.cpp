@@ -175,18 +175,18 @@ imu_orientation_e_t DualIMU::get_physical_orientation() const {
 
 // ---------- devices / lemlib setup ----------
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
-pros::Motor mfl(-2 , pros::MotorGearset::blue);
-pros::Motor mbl(-20, pros::MotorGearset::blue);
-pros::Motor mfr(9, pros::MotorGearset::blue);
-pros::Motor mbr(16, pros::MotorGearset::blue);
-pros::MotorGroup right_motors({9, 16}, pros::MotorGearset::blue);
-pros::MotorGroup left_motors({-2, -20}, pros::MotorGearset::blue);
-pros::Motor casL(-11, pros::MotorGearset::green);
-pros::Motor casR(10, pros::MotorGearset::green); // placeholder port until cascade right motor is wired
-pros::Motor intake(-1, pros::MotorGearset::green); // reversed
-pros::Motor roller(14, pros::MotorGearset::green);
-pros::Rotation rollerPos(18); // tilter position sensor
-pros::Motor tilter(-17, pros::MotorGearset::green);
+pros::Motor mfl(-11 , pros::MotorGearset::blue);
+pros::Motor mbl(-15, pros::MotorGearset::blue);
+pros::Motor mfr(21, pros::MotorGearset::blue);
+pros::Motor mbr(8, pros::MotorGearset::blue);
+pros::MotorGroup right_motors({21, 8}, pros::MotorGearset::blue);
+pros::MotorGroup left_motors({-11, -15}, pros::MotorGearset::blue);
+pros::Motor casL(-13, pros::MotorGearset::green);
+pros::Motor casR(19, pros::MotorGearset::green); // placeholder port until cascade right motor is wired
+pros::Motor intake(-12, pros::MotorGearset::green); // reversed
+pros::Motor roller(-14, pros::MotorGearset::green);
+pros::Rotation rollerPos(16); // tilter position sensor
+pros::Motor tilter(-20, pros::MotorGearset::green);
 int highVal = 125; // degrees, 0 = fully down (sensor zeroed at boot)
 int midVal = 90;
 int downVal = 3;
@@ -336,14 +336,14 @@ void stopRollerPosAsync() {
 
 pros::Rotation autonSelector(7);
 pros::Rotation hTracker(21);
-pros::Imu imu1(7);
+pros::Imu imu1(17);
 pros::Imu imu2(6);
 DualIMU imu(&imu1, &imu2); // combined imu object
 
-pros::Distance frontDistanceSensor(15);
-pros::Distance backDistance(5);
-pros::Distance leftDistanceSensor(4);
-pros::Distance rightDistanceSensor(8);
+pros::Distance frontDistanceSensor(9);
+pros::Distance backDistance(1);
+pros::Distance leftDistanceSensor(2);
+pros::Distance rightDistanceSensor(10);
 
 Distance* frontDistance = &frontDistanceSensor;
 Distance* backDistancePtr = &backDistance;

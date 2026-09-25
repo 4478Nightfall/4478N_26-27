@@ -95,6 +95,11 @@ void intakeSpin(int vel) {
     roller.move(vel);
 }
 
+void justIntakeSpin(int vel) {
+    intake.move(vel);
+    roller.move(vel);
+}
+
 void spinAroundGoal(double heading, double timeout){
 
     left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
@@ -187,7 +192,7 @@ double slew(double val, double fwdVal)
 void drivePID(double fwdVal, double maxSpeedPercent, double timeout)
 {
     
-    double kP = 0.21; 
+    double kP = 0.20; 
     double kI = 0.000000; 
     double kD = 0.12; 
 

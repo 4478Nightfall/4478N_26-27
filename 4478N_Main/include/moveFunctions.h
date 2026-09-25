@@ -25,5 +25,6 @@ extern void setCasDegreeAsync(double targetDeg);
 extern void stopCasAsync();
 extern void intakeDown();
 extern void intakeSpin(int vel);
+extern void justIntakeSpin(int vel);
 
 #endif

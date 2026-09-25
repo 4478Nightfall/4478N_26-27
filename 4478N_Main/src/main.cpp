@@ -113,7 +113,7 @@ void autonomous()
     left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     // intPos.set_value(LOW);
-    allianceLeft();
+    neutralLeft();
     // Run the selected autonomous routine
     // switch (selection)
     // {
