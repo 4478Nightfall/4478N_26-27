@@ -10,6 +10,8 @@
 #include <string>
 #include <iostream>
 #include <thread>
+#include <atomic>
+#include <memory>
 using namespace pros;
 using namespace lemlib;
 
@@ -175,49 +177,160 @@ imu_orientation_e_t DualIMU::get_physical_orientation() const {
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 pros::Motor mfl(-2 , pros::MotorGearset::blue);
 pros::Motor mbl(-20, pros::MotorGearset::blue);
-pros::Motor mfr(13, pros::MotorGearset::blue);
+pros::Motor mfr(9, pros::MotorGearset::blue);
 pros::Motor mbr(16, pros::MotorGearset::blue);
-pros::MotorGroup right_motors({13, 16}, pros::MotorGearset::blue);
+pros::MotorGroup right_motors({9, 16}, pros::MotorGearset::blue);
 pros::MotorGroup left_motors({-2, -20}, pros::MotorGearset::blue);
 pros::Motor casL(-11, pros::MotorGearset::green);
 pros::Motor casR(10, pros::MotorGearset::green); // placeholder port until cascade right motor is wired
 pros::Motor intake(-1, pros::MotorGearset::green); // reversed
 pros::Motor roller(14, pros::MotorGearset::green);
-pros::Motor tilter(-17, pros::MotorGearset::green); // tilter position is read from this motor's encoder
-// tilter targets in motor encoder degrees (0 = fully down at boot).
-// TODO: re-tune highVal/midVal on the robot - these were converted from the old rotation sensor centidegrees
-int highVal = 1400;
-int midVal = 1100;
-int downVal = 0;
-int tilterSpeed = 127; // max rpm used by move_absolute (green cartridge tops out at 200)
-int casDownVal = 3;
+pros::Rotation rollerPos(18); // tilter position sensor
+pros::Motor tilter(-17, pros::MotorGearset::green);
+int highVal = 125; // degrees, 0 = fully down (sensor zeroed at boot)
+int midVal = 90;
+int downVal = 3;
+int tilterSpeed = 50;
+int tilterTimeout = 1000; // ms, max time any tilter move can run before giving up
+int casDownVal = 0;
 bool high;
 bool mid;
 bool low = true;
 
-// move_absolute only sets the target and returns immediately - the motor's
-// internal controller drives to it, so none of these block or need a task.
-// high/mid/low track the last commanded target, not whether it's been reached.
+// tilter angle in degrees (rollerPos reads centidegrees), goes up as the tilter goes up
+static double tilterPos() {
+    return rollerPos.get_position() / 100.0;
+}
+
+// moves tilter to high
 void goHigh(){
-    
-    tilter.move_absolute(highVal, tilterSpeed);
-    low = false;
+        tilter.move(100);
+if(tilterPos() >= highVal){
+    tilter.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    tilter.brake();
+     low = false;
     high = true;
     mid = false;
 }
-
-void goMid(){
-    tilter.move_absolute(midVal, tilterSpeed);
-    low = false;
-    high = false;
-    mid = true;
 }
 
+// moves tilter to mid
+void goMid(){
+    uint32_t start = pros::millis();
+    if(tilterPos() < midVal){
+        while(tilterPos() < midVal && pros::millis() - start < tilterTimeout){
+            tilter.move(100);
+            pros::delay(10);
+       }
+       tilter.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+       tilter.brake();
+        low = false;
+    high = false;
+    mid = true;
+    }
+    else{
+        while(tilterPos() > 100 && pros::millis() - start < tilterTimeout){
+            tilter.move(-20);
+            pros::delay(10);
+       }
+         tilter.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+       tilter.brake();
+        low = false;
+    high = false;
+    mid = true;
+    }
+}
+
+// moves tilter to down
 void goDown(){
-    tilter.move_absolute(downVal, tilterSpeed);
+        tilter.move(-100);
+
+        if(tilterPos() <= downVal){
     low = true;
     high = false;
     mid = false;
+    tilter.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    tilter.brake();
+        }
+}
+
+// async version of goHigh/goMid/goDown - runs in the background so tilter
+// can move at the same time as driving or other tasks
+enum class RollerTarget { High, Mid, Down };
+
+static std::atomic<bool> rollerPosStopRequested(false);
+static std::atomic<bool> rollerPosRunning(false);
+static pros::Task* rollerPosTaskPtr = nullptr;
+
+static void rollerPosTaskFn(void* rawTarget) {
+    std::unique_ptr<RollerTarget> targetPtr(reinterpret_cast<RollerTarget*>(rawTarget));
+    RollerTarget target = *targetPtr;
+    rollerPosRunning = true;
+    rollerPosStopRequested = false;
+    uint32_t start = pros::millis();
+    auto timedOut = [&]() { return pros::millis() - start >= (uint32_t)tilterTimeout; };
+
+    if (target == RollerTarget::High) {
+        while (tilterPos() < highVal && !rollerPosStopRequested && !timedOut()) {
+            tilter.move(50);
+            pros::delay(20);
+        }
+    } else if (target == RollerTarget::Mid) {
+        if (tilterPos() < midVal) {
+            while (tilterPos() < midVal && !rollerPosStopRequested && !timedOut()) {
+                tilter.move(50);
+                pros::delay(20);
+            }
+        } else {
+            while (tilterPos() > midVal && !rollerPosStopRequested && !timedOut()) {
+                tilter.move(-50);
+                pros::delay(20);
+            }
+        }
+    } else {
+        while (tilterPos() > downVal && !rollerPosStopRequested && !timedOut()) {
+            tilter.move(-50);
+            pros::delay(20);
+        }
+    }
+    tilter.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    tilter.brake();
+
+    if (!rollerPosStopRequested) {
+        low = (target == RollerTarget::Down);
+        high = (target == RollerTarget::High);
+        mid = (target == RollerTarget::Mid);
+    }
+    rollerPosRunning = false;
+}
+
+static void startRollerPosTask(RollerTarget target) {
+    if (rollerPosRunning) {
+        rollerPosStopRequested = true;
+        for (int i = 0; i < 50 && rollerPosRunning; ++i) pros::delay(10);
+    }
+    if (rollerPosTaskPtr != nullptr && !rollerPosRunning) {
+        delete rollerPosTaskPtr;
+        rollerPosTaskPtr = nullptr;
+    }
+    auto* targetPtr = new RollerTarget(target);
+    rollerPosTaskPtr = new pros::Task(rollerPosTaskFn, targetPtr, TASK_PRIORITY_DEFAULT,
+                                       TASK_STACK_DEPTH_DEFAULT, "rollerPosAsync");
+}
+
+// starts moving tilter in the background, returns immediately
+void goHighAsync() { startRollerPosTask(RollerTarget::High); }
+void goMidAsync() { startRollerPosTask(RollerTarget::Mid); }
+void goDownAsync() { startRollerPosTask(RollerTarget::Down); }
+
+// stops whichever tilter async move is currently running
+void stopRollerPosAsync() {
+    rollerPosStopRequested = true;
+    for (int i = 0; i < 100 && rollerPosRunning; ++i) pros::delay(10);
+    if (rollerPosTaskPtr != nullptr && !rollerPosRunning) {
+        delete rollerPosTaskPtr;
+        rollerPosTaskPtr = nullptr;
+    }
 }
 
 
@@ -227,10 +340,10 @@ pros::Imu imu1(7);
 pros::Imu imu2(6);
 DualIMU imu(&imu1, &imu2); // combined imu object
 
-pros::Distance frontDistanceSensor(8);
-pros::Distance backDistance(17);
-pros::Distance leftDistanceSensor(1);
-pros::Distance rightDistanceSensor(9);
+pros::Distance frontDistanceSensor(15);
+pros::Distance backDistance(5);
+pros::Distance leftDistanceSensor(4);
+pros::Distance rightDistanceSensor(8);
 
 Distance* frontDistance = &frontDistanceSensor;
 Distance* backDistancePtr = &backDistance;

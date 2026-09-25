@@ -87,12 +87,44 @@ void intakeDown() {
     intake.move(127); // Intake in
     roller.move(127);
     setCasDegreeAsync(0); // Drop cascade to bottom
-    goDown();        // Tilt tilter all the way down
+    goDownAsync();        // Tilt tilter all the way down
 }
 
 void intakeSpin(int vel) {
     intake.move(vel);
     roller.move(vel);
+}
+
+void spinAroundGoal(double heading, double timeout){
+
+    left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
+    right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
+    uint32_t start = pros::millis();
+
+    // wrapped error: positive = target is ahead in heading, negative = behind (shortest way)
+    double error = lemlib::angleError(heading, chassis.getPose().theta, false);
+
+    if (error > 0){
+        while (error > 0 && pros::millis() - start < timeout){
+            error = lemlib::angleError(heading, chassis.getPose().theta, false);
+            left_motors.move(-30);
+            right_motors.move(-100);
+            pros::delay(10);
+        }
+        left_motors.brake();
+        right_motors.brake();
+    }
+    else if (error <= 0){
+        while (error <= 0 && pros::millis() - start < timeout){
+            error = lemlib::angleError(heading, chassis.getPose().theta, false);
+            left_motors.move(-100);
+            right_motors.move(-30);
+            pros::delay(10);
+        }
+        left_motors.brake();
+        right_motors.brake();
+    }
+
 }
 
 double slewStep = 15.0;

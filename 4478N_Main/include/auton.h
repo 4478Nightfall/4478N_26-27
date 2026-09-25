@@ -7,5 +7,6 @@ using namespace pros;
 extern void dataloggingRoute();
 extern void PIDtuning();
 extern void allianceLeft();
+extern void neutralLeft();
 
 #endif

@@ -28,7 +28,8 @@ void initialize()
     pros::delay(100);           // Allow sensor to stabilize
 
     intPos.set_value(LOW); // Set back gate to default position (closed/down)
-    tilter.tare_position(); // Reset tilter position to zero
+    tilter.tare_position();
+    rollerPos.set_position(0); // tilter starts fully down = 0
     casL.tare_position();
     casR.tare_position();
  
@@ -113,7 +114,6 @@ void autonomous()
     right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     // intPos.set_value(LOW);
     allianceLeft();
-
     // Run the selected autonomous routine
     // switch (selection)
     // {
@@ -246,7 +246,7 @@ void opcontrol()
                 leftHighSent = false;
             }
             if (!leftHighSent && pros::millis() - leftStartTime >= leftHighDelayMs) {
-                goHigh();
+                goHighAsync();
                 leftHighSent = true;
             }
         }
@@ -312,7 +312,7 @@ void opcontrol()
         
         }
 
-        if (casL.get_position() > casDownVal) {
+        if (casL.get_position() > 12) {
             rolMode = true;
         } else {
             rolMode = false;
@@ -322,13 +322,13 @@ void opcontrol()
         if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_DOWN)){
             if(high == true)
             {
-                goDown();
+                goDownAsync();
             }
             else if (mid == true){
-                goDown();
+                goDownAsync();
             }
             else if (low == true){
-                goMid();
+                goMidAsync();
             }
             else{
                 tilter.brake();
@@ -340,13 +340,13 @@ void opcontrol()
         if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_DOWN)){
             if(high == true)
             {
-                goMid();
+                goMidAsync();
             }
             else if (mid == true){
-                goHigh();
+                goHighAsync();
             }
             else if (low == true){
-                goMid();
+                goMidAsync();
             }
             else{
                 tilter.brake();

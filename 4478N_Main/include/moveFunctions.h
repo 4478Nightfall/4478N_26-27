@@ -16,7 +16,7 @@ extern void drivePIDAsync(double, double maxSpeedPercent = 100.0, double timeout
 extern void stopDrivePIDAsync();
 extern bool isDrivePIDRunning();
 extern void turnToHeadingSmart(float theta, int timeout, lemlib::TurnToHeadingParams params = {}, bool async = true);
-
+extern void spinAroundGoal(double heading, double timeout);
 // ---------- mechanism control (callable from autonomous and opcontrol) ----------
 extern void toggleIntPos();
 extern void rollerSpin(int vel);

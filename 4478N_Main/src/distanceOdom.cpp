@@ -12,14 +12,14 @@ using namespace lemlib;
 
 // sensor to center along each face (in) -- should match header constants
 double frontOffset = 2.0;
-double backOffset = 6.0;
-double leftOffset = 3.5;
-double rightOffset = 4.0;
+double backOffset = 2.0;
+double leftOffset = 5;
+double rightOffset = 5;
 // *EdgeOffsets: along bumper (F/B + = right +x, L/R + = forward +y). Cardinal*sin(d) added to perp distance after perpAlongNormal.
-double frontEdgeOffset = 5;
-double backEdgeOffset = 6.5;
-double leftEdgeOffset = 3;
-double rightEdgeOffset = 2.5;
+double frontEdgeOffset = 4.5;
+double backEdgeOffset = 5;
+double leftEdgeOffset = -3;
+double rightEdgeOffset = 0;
 const double fieldHalfSize = 71.0; // in
 static double theta = 0.0;
 static double x = chassis.getPose().x;
