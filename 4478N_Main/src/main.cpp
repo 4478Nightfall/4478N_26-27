@@ -113,7 +113,7 @@ void autonomous()
     left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     // intPos.set_value(LOW);
-    neutralLeft();
+    allianceLeft();
     // Run the selected autonomous routine
     // switch (selection)
     // {
@@ -289,12 +289,12 @@ void opcontrol()
             casL.move(127); // Cas up
             casR.move(127);
         }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L1))
         {
             casL.move(127); // Spin left cas out
             casR.move(127);
         }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L1))
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
         {
             // Spin cas in, but stop both once either hits the 0 floor
             if (casL.get_position() <= 0 || casR.get_position() <= 0) {

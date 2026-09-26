@@ -188,7 +188,7 @@ pros::Motor roller(-14, pros::MotorGearset::green);
 pros::Rotation rollerPos(16); // tilter position sensor
 pros::Motor tilter(-20, pros::MotorGearset::green);
 int highVal = 125; // degrees, 0 = fully down (sensor zeroed at boot)
-int midVal = 90;
+int midVal = 82;
 int downVal = 3;
 int tilterSpeed = 50;
 int tilterTimeout = 1000; // ms, max time any tilter move can run before giving up
@@ -340,10 +340,10 @@ pros::Imu imu1(17);
 pros::Imu imu2(6);
 DualIMU imu(&imu1, &imu2); // combined imu object
 
-pros::Distance frontDistanceSensor(9);
+pros::Distance frontDistanceSensor(10);
 pros::Distance backDistance(1);
 pros::Distance leftDistanceSensor(2);
-pros::Distance rightDistanceSensor(10);
+pros::Distance rightDistanceSensor(9);
 
 Distance* frontDistance = &frontDistanceSensor;
 Distance* backDistancePtr = &backDistance;
