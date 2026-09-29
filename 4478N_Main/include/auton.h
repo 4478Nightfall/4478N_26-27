@@ -5,6 +5,8 @@
 using namespace pros;
 
 extern void dataloggingRoute();
+extern void accelDecelTest();
+extern void profileTest();
 extern void PIDtuning();
 extern void allianceLeft();
 extern void neutralLeft();

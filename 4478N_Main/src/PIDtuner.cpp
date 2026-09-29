@@ -5,6 +5,7 @@
 #include "auton.h"
 #include "autonSelector.h"
 #include "moveFunctions.h"
+#include "motionControl.h"
 #include "pros/misc.h"
 #include "pros/motors.h"
 #include <cmath>

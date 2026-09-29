@@ -27,6 +27,40 @@ void dataloggingRoute(){
     stopDatalogging();
 }
 
+// measures real accel + decel: full-speed velocity command for 2s, then brake hold.
+// needs ~10-12ft of clear runway. read the fast datalog csv afterwards
+void accelDecelTest(){
+    startFastDatalogging();
+    pros::delay(200); // rest baseline
+
+    datalogMarker = 1;
+    left_motors.move_velocity(600);
+    right_motors.move_velocity(600);
+    pros::delay(2000);
+
+    datalogMarker = 2;
+    left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
+    right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
+    left_motors.brake();
+    right_motors.brake();
+    pros::delay(1000); // capture the whole stop
+
+    stopFastDatalogging();
+}
+
+// validation run for driveProfiled - same distances the roadmap lists
+void profileTest(){
+    left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
+    right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
+    driveProfiled(12);
+    pros::delay(500);
+    driveProfiled(24);
+    pros::delay(500);
+    driveProfiled(48);
+    pros::delay(500);
+    driveProfiled(-36);
+}
+
 void PIDtuning(){
     chassis.setPose(0,0,0);
     chassis.moveToPose(0,48,0,3000,{});

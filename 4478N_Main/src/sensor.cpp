@@ -313,3 +313,93 @@ void stopDatalogging()
     datalogFilename[0] = '\0';
 }
 
+// ---------- fast sd datalog (buffered) ----------
+// opening/closing the sd file every sample (logData) is far too slow for 10ms
+// sampling, so samples go into ram and get written out in one go at the end.
+struct FastSample
+{
+    uint32_t t_us;
+    int marker;
+    float vel[4];     // rpm: mfl, mbl, mfr, mbr
+    float pos[4];     // deg
+    float voltage[4]; // V
+    float current[4]; // A
+};
+
+static const int fastMaxSamples = 600; // 6s at 10ms
+static const uint32_t fastPeriodMs = 10;
+static FastSample* fastBuffer = nullptr;
+static volatile int fastCount = 0;
+static volatile bool fastRunning = false;
+static pros::Task* fastTask = nullptr;
+volatile int datalogMarker = 0;
+
+static void fastLoopFn(void *)
+{
+    uint32_t start = pros::micros();
+    uint32_t now = pros::millis();
+    pros::Motor* motors[4] = {&mfl, &mbl, &mfr, &mbr};
+    while (fastRunning && fastCount < fastMaxSamples)
+    {
+        FastSample& s = fastBuffer[fastCount];
+        s.t_us = pros::micros() - start;
+        s.marker = datalogMarker;
+        for (int i = 0; i < 4; i++)
+        {
+            s.vel[i] = motors[i]->get_actual_velocity();
+            s.pos[i] = motors[i]->get_position();
+            s.voltage[i] = motors[i]->get_voltage() / 1000.0;
+            s.current[i] = motors[i]->get_current_draw() / 1000.0;
+        }
+        fastCount = fastCount + 1;
+        pros::Task::delay_until(&now, fastPeriodMs);
+    }
+}
+
+void startFastDatalogging()
+{
+    if (fastRunning)
+        return;
+    if (!fastBuffer)
+        fastBuffer = new FastSample[fastMaxSamples];
+    fastCount = 0;
+    datalogMarker = 0;
+    fastRunning = true;
+    fastTask = new pros::Task(fastLoopFn, nullptr, "Fast Datalog");
+}
+
+void stopFastDatalogging()
+{
+    fastRunning = false;
+    if (fastTask)
+    {
+        fastTask->remove();
+        delete fastTask;
+        fastTask = nullptr;
+    }
+
+    datalogFilename[0] = '\0';
+    FILE *file = std::fopen(getDatalogFilename(), "w");
+    if (!file)
+    {
+        pros::lcd::set_text(0, "SD open fail");
+        return;
+    }
+    std::fprintf(file, "t_ms,marker,"
+        "mfl_vel,mbl_vel,mfr_vel,mbr_vel,"
+        "mfl_deg,mbl_deg,mfr_deg,mbr_deg,"
+        "mfl_volt,mbl_volt,mfr_volt,mbr_volt,"
+        "mfl_amp,mbl_amp,mfr_amp,mbr_amp\n");
+    for (int i = 0; i < fastCount; i++)
+    {
+        const FastSample& s = fastBuffer[i];
+        std::fprintf(file, "%.2f,%d,", s.t_us / 1000.0, s.marker);
+        for (int j = 0; j < 4; j++) std::fprintf(file, "%.2f,", s.vel[j]);
+        for (int j = 0; j < 4; j++) std::fprintf(file, "%.2f,", s.pos[j]);
+        for (int j = 0; j < 4; j++) std::fprintf(file, "%.3f,", s.voltage[j]);
+        for (int j = 0; j < 3; j++) std::fprintf(file, "%.3f,", s.current[j]);
+        std::fprintf(file, "%.3f\n", s.current[3]);
+    }
+    std::fclose(file);
+    datalogFilename[0] = '\0';
+}

@@ -3,6 +3,7 @@
 // required files for devices
 #include "main.h" 
 #include "lemlib/chassis/chassis.hpp"
+#include "motionControl.h"
 
 extern void drivePIDTune(double kP, double kI, double kD, double fwdVal, double maxSpeedPercent, double timeout);
 extern void tuningLoop();
