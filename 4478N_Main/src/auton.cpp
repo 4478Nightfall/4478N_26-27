@@ -327,7 +327,7 @@ drivePID(20,50,1200);
     delay(1500);
     chassis.setPose(9,-20,chassis.getPose().theta);
         chassis.moveToPose(-32.5,-45,70,3000,{.forwards = false},true);
-        delay(800);
+        delay(1200);
                 goMidAsync();
                 delay(1400);
     rollerSpin(-127);
@@ -341,17 +341,21 @@ void skills(){
     drivePID(500,100,400);//toggle
     intakeSpin(127);
     chassis.setPose(0,-62,chassis.getPose().theta);
-    chassis.moveToPose(25,-47,270,3000,{.forwards = false,.lead = 0.5, .maxSpeed = 60}, true);
-    delay(400);
+    drivePID(20,100,1200);
+    resetOdom(true,false,false,false);
+    chassis.moveToPose(-25,-47,90,3000,{.forwards = false, .maxSpeed = 60}, true);
+    delay(200);
     goMidAsync();
-    delay(2400);
+    delay(1300);
     intakeSpin(-127);
     delay(300);
     goHigh();
     setCasDegree(500);
-    chassis.setPose(18,-47,chassis.getPose().theta);
-    chassis.moveToPose(0,-10,0,1500);
+    drivePID(20,100,1000);
+
     goDownAsync();
     setCasDegreeAsync(0);
+    chassis.turnToHeading(0,1000);
+    drivePID(30,100,1500);
 
 }

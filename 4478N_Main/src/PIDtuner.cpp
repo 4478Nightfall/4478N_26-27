@@ -13,14 +13,14 @@ using namespace lemlib;
 
 // ---------- pid tuning / test ----------
 
-double kP = 0.22;
+double kP = 0.20;
 double kI = 0.000000;
-double kD = 0.1;
+double kD = 0.12;
 
 void drivePIDTune(double kP, double kI, double kD, double fwdVal, double maxSpeedPercent, double timeout)
 {
     
-    const double diameter = 3.25;
+    const double diameter = 2.75;
     const double pi = 3.14159;
     const double outputGear = 48;
     const double inputGear = 36;
