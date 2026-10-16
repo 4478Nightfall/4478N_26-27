@@ -21,18 +21,17 @@ using namespace lemlib;
  */
 void initialize()
 {
+    claw.set_value(true);
     pros::lcd::initialize();
     chassis.calibrate(); // calibrate sensors
 
     // Initialize color sensor
     pros::delay(100);           // Allow sensor to stabilize
 
-    intPos.set_value(LOW); // Set back gate to default position (closed/down)
-    tilter.tare_position();
-    rollerPos.set_position(0); // tilter starts fully down = 0
-    casL.tare_position();
-    casR.tare_position();
- 
+    casLTop.tare_position(); // cascade starts fully down = 0
+    casLBottom.tare_position();
+    casRTop.tare_position();
+    casRBottom.tare_position();
 
     // Add a small delay to ensure solenoid has time to respond
     pros::delay(100);
@@ -46,6 +45,7 @@ void initialize()
                 pros::delay(100);
                 continue;
             }
+            pros::lcd::print(0, "cas L %.0f R %.0f", casLTop.get_position(), casRTop.get_position());
             // const Pose lem = chassis.getPose();
             // pros::lcd::print(0, "LEM %5.1f %5.1f h%4.0f", lem.x, lem.y, lem.theta);
 
@@ -112,8 +112,8 @@ void autonomous()
     // int selection = getAutonSelection(); // Get selected auton routine
     left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
-    // intPos.set_value(LOW);
-    accelDecelTest();
+    claw.set_value(true);
+    skills();
     // Run the selected autonomous routine
     // switch (selection)
     // {
@@ -192,39 +192,28 @@ void autonomous()
  */
 void opcontrol()
 {
-    intPos.set_value(LOW); // Start with front gate closed (down)
     // Add a small delay to ensure solenoid has time to respond
     pros::delay(100);
 
-    // Start color sorting task once
-
-    // Outtake speed toggle variables (outside loop to persist state)
-    bool wasAPressed = false;
-    bool rolMode; //change between settings for roller position
-
-    // LEFT score macro state: roller out + cas up, then tilter high after a delay
-    const uint32_t leftHighDelayMs = 500;
-    uint32_t leftStartTime = 0;
-    bool leftHighSent = false;
-
     // Main driver control loop
+    bool clawOpen = true;
+    uint32_t clawReadyAt = 0; // millis() time when auto-close is allowed again
+    const double clawLiftDeg = 500; // cascade lift (motor degrees) after the claw closes
+    bool clawLifting = false;
+    bool cascadeReturning = false; // R1: drive the cascade back down to 0
+    double clawLiftTarget = 0;
+    claw.set_value(false);
     while (true)
     {
-                 
-        // Display color sensor debugging info
-
-        casL.set_brake_mode(MOTOR_BRAKE_HOLD);
-        casR.set_brake_mode(MOTOR_BRAKE_HOLD);
-        intake.set_brake_mode(MOTOR_BRAKE_HOLD);
-        tilter.set_brake_mode(MOTOR_BRAKE_HOLD);
-        roller.set_brake_mode(MOTOR_BRAKE_HOLD);
+        casLTop.set_brake_mode(MOTOR_BRAKE_HOLD);
+        casLBottom.set_brake_mode(MOTOR_BRAKE_HOLD);
+        casRTop.set_brake_mode(MOTOR_BRAKE_HOLD);
+        casRBottom.set_brake_mode(MOTOR_BRAKE_HOLD);
         right_motors.set_brake_mode(MOTOR_BRAKE_COAST); // Coast for smoother drive
         left_motors.set_brake_mode(MOTOR_BRAKE_COAST);
 
         // Hold X to enter the PID tuner (blocks driving until B is pressed to exit)
-        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_X)) {
-            pidTuningMode();
-        }
+
 
         // Get joystick values for tank drive
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
@@ -237,125 +226,113 @@ void opcontrol()
         // Move the robot using tank drive
         chassis.tank(leftY, rightY);
 
-        // LEFT macro: outtake roller while cas goes up, tilter goes high after leftHighDelayMs.
-        // While held it overrides the roller and cas controls below.
-        bool leftHeld = controller.get_digital(E_CONTROLLER_DIGITAL_LEFT);
-        if (leftHeld) {
-            if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_LEFT)) {
-                leftStartTime = pros::millis();
-                leftHighSent = false;
-            }
-            if (!leftHighSent && pros::millis() - leftStartTime >= leftHighDelayMs) {
-                goHighAsync();
-                leftHighSent = true;
-            }
+        // Cascade: L1 up, L2 down (stops at the 0 floor)
+        const bool cascadeManual = controller.get_digital(E_CONTROLLER_DIGITAL_L1) ||
+                                   controller.get_digital(E_CONTROLLER_DIGITAL_L2);
+        if (cascadeManual)
+        {
+            clawLifting = false; // driver input overrides the automatic lift
+            cascadeReturning = false;
         }
 
-        // Intake: Y (middle-goal spin) takes priority over R2/R1.
-        
-        if (leftHeld)
+        if (cascadeReturning)
         {
-            roller.move(-127); // Roller out
+            // move_absolute is running; let it finish unless the driver takes over
+            if (fabs(casLTop.get_position()) < 5) {
+                cascadeReturning = false;
+            }
         }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_R2))
+        else if (clawLifting)
         {
-            intake.move(127); // Intake in
-            roller.move(127);
-            casL.move_absolute(0, -127);
-            casR.move_absolute(0, -127);
-        }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_R1))
-        {
-            intake.move(-127); // Intake out
-            roller.move(-127);
-        }
-        else if (controller.get_digital(E_CONTROLLER_DIGITAL_B)){
-            roller.move(127);
-        }
-        else if(controller.get_digital(E_CONTROLLER_DIGITAL_A)){
-            roller.move(-127);
-        }
-        else
-        {
-            intake.set_brake_mode(MOTOR_BRAKE_HOLD);
-            intake.brake(); // Stop intake when neither button is pressed
-            roller.brake(); // Stop roller when no button driving it is pressed
-        }
-        
-
-       
-       if (leftHeld)
-        {
-            casL.move(127); // Cas up
-            casR.move(127);
+            // drive up like L1 does until we reach the target
+            if (casLTop.get_position() >= clawLiftTarget) {
+                clawLifting = false;
+                casLTop.brake();
+                casLBottom.brake();
+                casRTop.brake();
+                casRBottom.brake();
+            } else {
+                casLTop.move(127);
+                casLBottom.move(127);
+                casRTop.move(127);
+                casRBottom.move(127);
+            }
         }
         else if (controller.get_digital(E_CONTROLLER_DIGITAL_L1))
         {
-            casL.move(127); // Spin left cas out
-            casR.move(127);
+            if (casLTop.get_position() >= casUpVal) {
+                // top limit reached - stop everything, can't go farther up
+                casLTop.brake();
+                casLBottom.brake();
+                casRTop.brake();
+                casRBottom.brake();
+            } else {
+                casLTop.move(127);
+                casLBottom.move(127);
+                casRTop.move(127);
+                casRBottom.move(127);
+            }
         }
         else if (controller.get_digital(E_CONTROLLER_DIGITAL_L2))
         {
-            // Spin cas in, but stop both once either hits the 0 floor
-            if (casL.get_position() <= 0 || casR.get_position() <= 0) {
-                casL.brake();
-                casR.brake();
+            if (casLTop.get_position() <= casDownVal || casRTop.get_position() <= casDownVal) {
+                casLTop.brake();
+                casLBottom.brake();
+                casRTop.brake();
+                casRBottom.brake();
             } else {
-                casL.move(-127);
-                casR.move(-127);
+                casLTop.move(-127);
+                casLBottom.move(-127);
+                casRTop.move(-127);
+                casRBottom.move(-127);
             }
         }
-        else if(!controller.get_digital(E_CONTROLLER_DIGITAL_L1) && !controller.get_digital(E_CONTROLLER_DIGITAL_L2))
+        else
         {
-            casL.brake();
-            casR.brake();
-        
+            casLTop.brake();
+            casLBottom.brake();
+            casRTop.brake();
+            casRBottom.brake();
         }
 
-        if (casL.get_position() > 12) {
-            rolMode = true;
-        } else {
-            rolMode = false;
-        }
-       
-       if (rolMode == false){
-        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_DOWN)){
-            if(high == true)
-            {
-                goDownAsync();
-            }
-            else if (mid == true){
-                goDownAsync();
-            }
-            else if (low == true){
-                goMidAsync();
-            }
-            else{
-                tilter.brake();
+        // claw: A toggles, R1 opens, and it closes by itself when something is close
+        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_R2)) {
+            const bool wasOpen = clawOpen;
+            clawOpen = !clawOpen;
+            claw.set_value(!clawOpen); // false = open, true = closed
+            delay(200);
+            if (wasOpen) {
+                // closing on a game piece: lift the cascade ~60 degrees
+                clawLiftTarget = fmin(casLTop.get_position() + clawLiftDeg, casUpVal);
+                clawLifting = true;
+                cascadeReturning = false;
             }
         }
-       }
+        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_R1)){
+            // send the cascade back to 0 degrees
+            clawLifting = false;
+            cascadeReturning = true;
+            casLTop.move_absolute(0, 200);
+            casLBottom.move_absolute(0, 200);
+            casRTop.move_absolute(0, 200);
+            casRBottom.move_absolute(0, 200);
+        }
+        //     if (clawOpen) clawReadyAt = pros::millis() + 1600; // no auto-close for 1 s after opening
+        // }
+        // if ((controller.get_digital(E_CONTROLLER_DIGITAL_R2) && clawOpen == false)) {
+        //     clawOpen = true;
+        //     claw.set_value(false);
+        //     clawReadyAt = pros::millis() + 1600; // no auto-close for 1 s after opening
+        // }
+        // int clawDist = frontDistanceSensor.get();
+        // if (clawDist > 0 && clawDist <= 67 && clawOpen == true && pros::millis() >= clawReadyAt) {
+        //     clawOpen = false;
+        //     claw.set_value(true);
+    // }
 
-       if (rolMode == true){
-        if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_DOWN)){
-            if(high == true)
-            {
-                goMidAsync();
-            }
-            else if (mid == true){
-                goHighAsync();
-            }
-            else if (low == true){
-                goMidAsync();
-            }
-            else{
-                tilter.brake();
-            }
-        }
-       }
 
-       
-       
+    
+
         // delay to save resources
         pros::delay(25);
     }

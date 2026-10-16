@@ -7,6 +7,7 @@
 #include "devices.h"
 #include "auton.h"
 #include "moveFunctions.h"
+#include <atomic>
 #include <string>
 #include <iostream>
 #include <thread>
@@ -32,16 +33,34 @@ void setPose(){
      theta = chassis.getPose().theta;
 }
 
+void pivot(bool direction /*True Left spin, false, right spin*/, int timeout){
+    if(direction == true){
+        right_motors.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+        right_motors.brake();
+        uint32_t start = pros::millis();
+        while (frontDistanceSensor.get() > 80 && pros::millis() - start < timeout) {
+                    left_motors.move(50);
+                    pros::delay(10);
+        }
+
+        left_motors.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+        left_motors.brake();        
+    }
+    else if(direction == false){
+        left_motors.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+        left_motors.brake();
+        uint32_t start = pros::millis();
+        while (frontDistanceSensor.get() > 80 && pros::millis() - start < timeout) {
+                    right_motors.move(50);
+                    pros::delay(10);
+        }
+
+        right_motors.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+        right_motors.brake();        
+    }
+}
+
 // ---------- mechanism control (callable from autonomous and opcontrol) ----------
-
-// toggles intPos
-void toggleIntPos() {
-    intPos.set_value(!intPos.get_value());
-}
-
-void rollerSpin(int vel){
-    roller.move(vel);
-}
 
 // moves cas motors to a degree. move_absolute hands the target to the motor's
 // built-in position controller, which ramps down and keeps holding the target
@@ -49,10 +68,14 @@ void rollerSpin(int vel){
 static const int casMaxRpm = 200; // green cartridge
 
 static void casGoTo(double targetDeg) {
-    casL.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    casR.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    casL.move_absolute(targetDeg, casMaxRpm);
-    casR.move_absolute(targetDeg, casMaxRpm);
+    casLTop.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    casLBottom.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    casRTop.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    casRBottom.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    casLTop.move_absolute(targetDeg, casMaxRpm);
+    casLBottom.move_absolute(targetDeg, casMaxRpm);
+    casRTop.move_absolute(targetDeg, casMaxRpm);
+    casRBottom.move_absolute(targetDeg, casMaxRpm);
 }
 
 // blocking version - returns once both cas motors have arrived (or after 2s).
@@ -60,8 +83,8 @@ static void casGoTo(double targetDeg) {
 void setCasDegree(double targetDeg) {
     casGoTo(targetDeg);
     uint32_t start = pros::millis();
-    while ((fabs(casL.get_position() - targetDeg) > 1.0 ||
-            fabs(casR.get_position() - targetDeg) > 1.0) &&
+    while ((fabs(casLTop.get_position() - targetDeg) > 1.0 ||
+            fabs(casRTop.get_position() - targetDeg) > 1.0) &&
            pros::millis() - start < 2000) {
         pros::delay(20);
     }
@@ -75,27 +98,21 @@ void setCasDegreeAsync(double targetDeg) {
 
 // stops cas where it currently is
 void stopCasAsync() {
-    casL.brake();
-    casR.brake();
+    casLTop.brake();
+    casLBottom.brake();
+    casRTop.brake();
+    casRBottom.brake();
 }
 
-
-
-// runs intake, drops cascade and tilter down (cas and tilter move in
-// the background so this returns immediately and driving isn't blocked)
-void intakeDown() {
-    intake.move(127); // Intake in
-    roller.move(127);
-    setCasDegreeAsync(0); // Drop cascade to bottom
-    goDownAsync();        // Tilt tilter all the way down
+// ---------- claw ----------
+void openClaw() { 
+    claw.set_value(false); 
 }
-
-void intakeSpin(int vel) {
-    intake.move(vel);
-    roller.move(vel);
-}
-
-void justIntakeSpin(int vel) {
-    intake.move(vel);
-    roller.move(vel);
+void closeClaw() { 
+    claw.set_value(true);
+    delay(200);
+    casLTop.move_absolute(500, 200);
+    casLBottom.move_absolute(500, 200);
+    casRTop.move_absolute(500, 200);
+    casRBottom.move_absolute(500, 200); 
 }

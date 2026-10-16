@@ -11,14 +11,14 @@ using namespace lemlib;
 // body +x right +y fwd. calcs figure which wall youre facing and snap x or y
 
 // sensor to center along each face (in) -- should match header constants
-double frontOffset = 2.0;
-double backOffset = 2.0;
-double leftOffset = 5;
+double frontOffset = 2.5;
+double backOffset = 0;
+double leftOffset = 6;
 double rightOffset = 5;
 // *EdgeOffsets: along bumper (F/B + = right +x, L/R + = forward +y). Cardinal*sin(d) added to perp distance after perpAlongNormal.
-double frontEdgeOffset = 4.5;
-double backEdgeOffset = 5;
-double leftEdgeOffset = -3;
+double frontEdgeOffset = 0;
+double backEdgeOffset = -5;
+double leftEdgeOffset = 0;
 double rightEdgeOffset = 0;
 const double fieldHalfSize = 71.0; // in
 static double theta = 0.0;

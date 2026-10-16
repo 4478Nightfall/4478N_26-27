@@ -10,8 +10,6 @@
 #include <string>
 #include <iostream>
 #include <thread>
-#include <atomic>
-#include <memory>
 using namespace pros;
 using namespace lemlib;
 
@@ -175,188 +173,46 @@ imu_orientation_e_t DualIMU::get_physical_orientation() const {
 
 // ---------- devices / lemlib setup ----------
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
-pros::Motor mfl(-11 , pros::MotorGearset::blue);
-pros::Motor mbl(-15, pros::MotorGearset::blue);
-pros::Motor mfr(21, pros::MotorGearset::blue);
-pros::Motor mbr(8, pros::MotorGearset::blue);
-pros::MotorGroup right_motors({21, 8}, pros::MotorGearset::blue);
-pros::MotorGroup left_motors({-11, -15}, pros::MotorGearset::blue);
-pros::Motor casL(-13, pros::MotorGearset::green);
-pros::Motor casR(19, pros::MotorGearset::green); // placeholder port until cascade right motor is wired
-pros::Motor intake(-12, pros::MotorGearset::green); // reversed
-pros::Motor roller(-14, pros::MotorGearset::green);
-pros::Rotation rollerPos(16); // tilter position sensor
-pros::Motor tilter(-20, pros::MotorGearset::green);
-int highVal = 125; // degrees, 0 = fully down (sensor zeroed at boot)
-int midVal = 82;
-int downVal = 3;
-int tilterSpeed = 50;
-int tilterTimeout = 1000; // ms, max time any tilter move can run before giving up
-int casDownVal = 0;
-bool high;
-bool mid;
-bool low = true;
+pros::Motor mfl(9 , pros::MotorGearset::blue);
+pros::Motor mbl(7, pros::MotorGearset::blue);
+pros::Motor mfr(-10, pros::MotorGearset::blue);
+pros::Motor mbr(-8, pros::MotorGearset::blue);
+pros::MotorGroup right_motors({9, 7}, pros::MotorGearset::blue);
+pros::MotorGroup left_motors({-10, -8}, pros::MotorGearset::blue);
+pros::Motor casLTop(-2, pros::MotorGearset::green);
+pros::Motor casLBottom(1, pros::MotorGearset::green);
+pros::Motor casRTop(16, pros::MotorGearset::green);
+pros::Motor casRBottom(-17, pros::MotorGearset::green);
 
-// tilter angle in degrees (rollerPos reads centidegrees), goes up as the tilter goes up
-static double tilterPos() {
-    return rollerPos.get_position() / 100.0;
-}
+int casDownVal = 10;
+int casUpVal = 2668; // top limit (degrees) for casLTop
 
-// moves tilter to high
-void goHigh(){
-        tilter.move(100);
-if(tilterPos() >= highVal){
-    tilter.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    tilter.brake();
-     low = false;
-    high = true;
-    mid = false;
-}
-}
-
-// moves tilter to mid
-void goMid(){
-    uint32_t start = pros::millis();
-    if(tilterPos() < midVal){
-        while(tilterPos() < midVal && pros::millis() - start < tilterTimeout){
-            tilter.move(100);
-            pros::delay(10);
-       }
-       tilter.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-       tilter.brake();
-        low = false;
-    high = false;
-    mid = true;
-    }
-    else{
-        while(tilterPos() > 100 && pros::millis() - start < tilterTimeout){
-            tilter.move(-20);
-            pros::delay(10);
-       }
-         tilter.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-       tilter.brake();
-        low = false;
-    high = false;
-    mid = true;
-    }
-}
-
-// moves tilter to down
-void goDown(){
-        tilter.move(-100);
-
-        if(tilterPos() <= downVal){
-    low = true;
-    high = false;
-    mid = false;
-    tilter.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    tilter.brake();
-        }
-}
-
-// async version of goHigh/goMid/goDown - runs in the background so tilter
-// can move at the same time as driving or other tasks
-enum class RollerTarget { High, Mid, Down };
-
-static std::atomic<bool> rollerPosStopRequested(false);
-static std::atomic<bool> rollerPosRunning(false);
-static pros::Task* rollerPosTaskPtr = nullptr;
-
-static void rollerPosTaskFn(void* rawTarget) {
-    std::unique_ptr<RollerTarget> targetPtr(reinterpret_cast<RollerTarget*>(rawTarget));
-    RollerTarget target = *targetPtr;
-    rollerPosRunning = true;
-    rollerPosStopRequested = false;
-    uint32_t start = pros::millis();
-    auto timedOut = [&]() { return pros::millis() - start >= (uint32_t)tilterTimeout; };
-
-    if (target == RollerTarget::High) {
-        while (tilterPos() < highVal && !rollerPosStopRequested && !timedOut()) {
-            tilter.move(50);
-            pros::delay(20);
-        }
-    } else if (target == RollerTarget::Mid) {
-        if (tilterPos() < midVal) {
-            while (tilterPos() < midVal && !rollerPosStopRequested && !timedOut()) {
-                tilter.move(50);
-                pros::delay(20);
-            }
-        } else {
-            while (tilterPos() > midVal && !rollerPosStopRequested && !timedOut()) {
-                tilter.move(-50);
-                pros::delay(20);
-            }
-        }
-    } else {
-        while (tilterPos() > downVal && !rollerPosStopRequested && !timedOut()) {
-            tilter.move(-50);
-            pros::delay(20);
-        }
-    }
-    tilter.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    tilter.brake();
-
-    if (!rollerPosStopRequested) {
-        low = (target == RollerTarget::Down);
-        high = (target == RollerTarget::High);
-        mid = (target == RollerTarget::Mid);
-    }
-    rollerPosRunning = false;
-}
-
-static void startRollerPosTask(RollerTarget target) {
-    if (rollerPosRunning) {
-        rollerPosStopRequested = true;
-        for (int i = 0; i < 50 && rollerPosRunning; ++i) pros::delay(10);
-    }
-    if (rollerPosTaskPtr != nullptr && !rollerPosRunning) {
-        delete rollerPosTaskPtr;
-        rollerPosTaskPtr = nullptr;
-    }
-    auto* targetPtr = new RollerTarget(target);
-    rollerPosTaskPtr = new pros::Task(rollerPosTaskFn, targetPtr, TASK_PRIORITY_DEFAULT,
-                                       TASK_STACK_DEPTH_DEFAULT, "rollerPosAsync");
-}
-
-// starts moving tilter in the background, returns immediately
-void goHighAsync() { startRollerPosTask(RollerTarget::High); }
-void goMidAsync() { startRollerPosTask(RollerTarget::Mid); }
-void goDownAsync() { startRollerPosTask(RollerTarget::Down); }
-
-// stops whichever tilter async move is currently running
-void stopRollerPosAsync() {
-    rollerPosStopRequested = true;
-    for (int i = 0; i < 100 && rollerPosRunning; ++i) pros::delay(10);
-    if (rollerPosTaskPtr != nullptr && !rollerPosRunning) {
-        delete rollerPosTaskPtr;
-        rollerPosTaskPtr = nullptr;
-    }
-}
+// pneumatic claw on the cascade
+pros::adi::Port claw('E', E_ADI_DIGITAL_OUT);
 
 
 pros::Rotation autonSelector(7);
 pros::Rotation hTracker(21);
-pros::Imu imu1(17);
+pros::Imu imu1(18);
 pros::Imu imu2(6);
 DualIMU imu(&imu1, &imu2); // combined imu object
 
-pros::Distance frontDistanceSensor(10);
-pros::Distance backDistance(1);
-pros::Distance leftDistanceSensor(2);
+pros::Distance frontDistanceSensor(11);
+pros::Distance backDistance(12);
+pros::Distance leftDistanceSensor(13);
 pros::Distance rightDistanceSensor(9);
 
 Distance* frontDistance = &frontDistanceSensor;
 Distance* backDistancePtr = &backDistance;
 Distance* leftDistance = &leftDistanceSensor;
 Distance* rightDistance = &rightDistanceSensor;
-adi::Port intPos('A', E_ADI_DIGITAL_OUT);
 
 
 lemlib::TrackingWheel horizontal_tracking_wheel(&hTracker, lemlib::Omniwheel::NEW_2, 1, 1);
 
 lemlib::Drivetrain drivetrain(&left_motors,
                               &right_motors,
-                              10.5,
+                              13,
                               lemlib::Omniwheel::NEW_275,
                               450,
                               2);
@@ -368,9 +224,9 @@ lemlib::OdomSensors sensors(nullptr,
                             &imu1
 );
 
-lemlib::ControllerSettings lateral_controller(17,
+lemlib::ControllerSettings lateral_controller(19,
                                               0,
-                                              9,
+                                              1,
                                               0,
                                               1,
                                               100,
@@ -380,7 +236,7 @@ lemlib::ControllerSettings lateral_controller(17,
 
 lemlib::ControllerSettings angular_controller(2,
                                               0,
-                                              8,
+                                              3,
                                               0,
                                               2,
                                               200,

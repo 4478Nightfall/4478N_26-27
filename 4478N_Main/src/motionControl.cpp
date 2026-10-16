@@ -5,6 +5,7 @@
 #include "lemlib/chassis/chassis.hpp"
 #include "devices.h"
 #include "motionControl.h"
+#include "moveFunctions.h"
 #include <algorithm>
 #include <atomic>
 #include <memory>
@@ -75,12 +76,12 @@ double slew(double val, double fwdVal)
     return prevVal;
 }
 
-void drivePID(double fwdVal, double maxSpeedPercent, double timeout)
+void drivePID(double fwdVal, double maxSpeedPercent, double timeout, bool claw)
 {
     
-    double kP = 0.20; 
+    double kP = 0.15; 
     double kI = 0.000000; 
-    double kD = 0.12; 
+    double kD = 0.02; 
 
     const double diameter = 2.75;
     const double pi = 3.14159;
@@ -159,6 +160,13 @@ void drivePID(double fwdVal, double maxSpeedPercent, double timeout)
         // Clamp output
         motorPower = std::clamp(motorPower, -maxMotor, maxMotor);
 
+        // Claw mode: object is in the claw, so stop right now (brake happens after the loop)
+        if (claw == true && frontDistanceSensor.get() < 100)
+        {
+            closeClaw();
+            break;
+        }
+
         // Move motors
         left_motors.move(motorPower);
         right_motors.move(motorPower);
@@ -184,7 +192,7 @@ void drivePID(double fwdVal, double maxSpeedPercent, double timeout)
         
         pros::delay(pollingRate);
     }
-    
+
     left_motors.brake();
     right_motors.brake();
 }
@@ -439,10 +447,7 @@ void driveProfiled(double inches, double maxSpeedPercent, double timeout)
 
     const double direction = (inches >= 0) ? 1.0 : -1.0;
     const double totalRev = std::fabs(inches) / inchesPerRev;
-    const double tailRev = profileTailZoneIn / inchesPerRev;
     const double tolRev = profileToleranceIn / inchesPerRev;
-    // P gain of the tail chosen so it hands off at exactly the creep speed
-    const double tailKp = profileMinVelRpm / tailRev; // rpm per rotation of error
 
     pros::Motor* motors[4] = {&mfl, &mbl, &mfr, &mbr};
     double startRot[4];
@@ -466,21 +471,24 @@ void driveProfiled(double inches, double maxSpeedPercent, double timeout)
         double remaining = totalRev - progress;    // negative = overshot
 
         double cmdRpm;
-        if (std::fabs(remaining) <= tailRev)
+        if (remaining > tolRev)
         {
-            // final stretch: position P-loop, can also back up if we overshot
-            cmdRpm = std::clamp(tailKp * remaining, -profileMinVelRpm, profileMinVelRpm);
+            // profile runs all the way to the tolerance band - its decel curve already
+            // bottoms out at the creep speed, so there is no separate slow final stretch
+            cmdRpm = profileVelocityRpm(progress, remaining, maxVelRpm);
         }
         else
         {
-            cmdRpm = profileVelocityRpm(progress, remaining, maxVelRpm);
+            // inside tolerance (or past it): command 0 and let it stop. no reverse correction -
+            // backing up at creep speed and braking overshot the other side and made it hunt
+            cmdRpm = 0.0;
         }
         cmdRpm *= direction;
 
         left_motors.move_velocity(cmdRpm);
         right_motors.move_velocity(cmdRpm);
 
-        if (std::fabs(remaining) < tolRev && avgVel < 20.0)
+        if (remaining <= tolRev && avgVel < 20.0)
         {
             if (++settled >= 3) break;
         }
