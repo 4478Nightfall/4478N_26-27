@@ -2,7 +2,8 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/chassis.hpp"
 #include "devices.h"
-#include "auton.h"
+#include "vexAuton.h"
+#include "recfAuton.h"
 #include "autonSelector.h"
 #include "moveFunctions.h"
 #include "PIDtuner.h"
@@ -113,7 +114,7 @@ void autonomous()
     left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     claw.set_value(true);
-    skills();
+    elimsRightCup();
     // Run the selected autonomous routine
     // switch (selection)
     // {
@@ -198,7 +199,7 @@ void opcontrol()
     // Main driver control loop
     bool clawOpen = true;
     uint32_t clawReadyAt = 0; // millis() time when auto-close is allowed again
-    const double clawLiftDeg = 500; // cascade lift (motor degrees) after the claw closes
+    const double clawLiftDeg = 400; // cascade lift (motor degrees) after the claw closes
     bool clawLifting = false;
     bool cascadeReturning = false; // R1: drive the cascade back down to 0
     double clawLiftTarget = 0;

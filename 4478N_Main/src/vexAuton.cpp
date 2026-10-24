@@ -4,7 +4,7 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/chassis.hpp"
 #include "devices.h"
-#include "auton.h"
+#include "vexAuton.h"
 #include "pros/adi.h"
 #include "sensor.h"
 #include "moveFunctions.h"
@@ -62,11 +62,9 @@ void profileTest(){
 }
 
 void PIDtuning(){
-    chassis.setPose(0,0,0);
-    chassis.moveToPose(0,48,0,3000,{});
-    chassis.moveToPose(0,24,0,2000,{.forwards = false,.minSpeed = 50});
-    turnToHeadingSmart(90,800);
-    turnToHeadingSmart(45,800);
+    chassis.turnToHeading(180,2000);
+    turnToHeadingSmart(90,2000);
+    turnToHeadingSmart(45,2000);
 }
 
 void allianceLeft(){
@@ -290,57 +288,43 @@ drivePID(20,50,1200);
 }
 
 void close(){
-        chassis.setPose(0,-65,90);
+     chassis.setPose(0,-65,90);
                         setCasDegreeAsync(600);
 
     drivePID(6,100,500);
     drivePID(-500,100,500);//toggle`
     drivePID(6,100,500);
     drivePID(-500,100,500);//toggle
-    chassis.setPose(-64,0,chassis.getPose().theta);
-    drivePID(18,100,1000);    
+    chassis.setPose(-64,-10,chassis.getPose().theta);
+    drivePID(17.5,100,1000);    
     // resetOdom(false,true,false,false);
     chassis.turnToHeading(180,500);
                     setCasDegreeAsync(600);
     drivePID(22,100,1200);
     setCasDegreeAsync(200);
     delay(400);
-    claw.set_value(false);
+    claw.set_value(false); // score first
     delay(300);
-    drivePID(-9,100,1000);
+    drivePID(-8,100,1000);
     setCasDegreeAsync(0);
-    chassis.turnToHeading(-125,1200);
-    drivePID(30,70,1500); //go to 3 stack
-    pivot(true,400);
-closeClaw();     
-    turnToHeadingSmart(-10,1000);
-    drivePID(-10,100,1000);
-        drivePID(-10,100,1000);
+    chassis.turnToHeading(90,1000);
+    drivePID(10,100,1000);
+        drivePID(10,100,1000);
 
-        resetOdom(false, true, true, false);
-    chassis.moveToPose(-47,-23,0,2000,{.maxSpeed = 60},true); // score second pin
-    setCasDegreeAsync(1500);
-    delay(1200);
-    setCasDegreeAsync(500);
-    delay(400);
-    claw.set_value(false);
-    delay(300);
-    drivePID(-10,100,1000);
-        setCasDegreeAsync(0);
-        turnToHeadingSmart(0,1000);
-
+    chassis.turnToHeading(0,1000);
+    drivePID(-28,70,1500); 
     resetOdom(false, true, true, false);
-    delay(300);
-    chassis.moveToPose(-52,-45,155,2000,{.maxSpeed = 40}); //grab 3rd pin
+    chassis.moveToPose(-41,-40,220,2400,{.maxSpeed = 60},false); // grab 2nd pin
     closeClaw();
     delay(200);
-
-    chassis.moveToPose(-49,-25,0,2000,{.maxSpeed = 60},true); //score 3rd pin
-    setCasDegreeAsync(2000);
-    delay(1000);
+    chassis.turnToHeading(0,1000);
+    chassis.moveToPose(-47,-22,0,2000,{.maxSpeed = 78},true); //score 2nd pin
     setCasDegreeAsync(1200);
+    delay(2000);
+    setCasDegreeAsync(400);
     delay(400);
-    openClaw();
+    claw.set_value(false);
+    drivePID(-5,100,1000);
 }
 
 void far(){
@@ -413,7 +397,7 @@ void skillsHard(){
     setCasDegreeAsync(0);
     chassis.turnToHeading(-125,1200);
     drivePID(30,70,1500); //go to 3 stack
-    pivot(true,400);    
+    pivot(true,1,400);    
     closeClaw();     
     turnToHeadingSmart(-10,1000);
     drivePID(-10,100,1000);
@@ -480,10 +464,10 @@ void skillsEasy(){
 
     drivePID(6,100,500);
     drivePID(-500,100,500);//toggle`
-    drivePID(6,100,500);
-    drivePID(-500,100,500);//toggle
+    drivePID(9,100,500);
+    drivePID(-500,100,800);//toggle
     chassis.setPose(-64,-10,chassis.getPose().theta);
-    drivePID(18,100,1000);    
+    drivePID(17.5,100,1000);    
     // resetOdom(false,true,false,false);
     chassis.turnToHeading(180,500);
                     setCasDegreeAsync(600);
@@ -492,72 +476,126 @@ void skillsEasy(){
     delay(400);
     claw.set_value(false); // score first
     delay(300);
-    drivePID(-9,100,1000);
+    drivePID(-8,100,1000);
     setCasDegreeAsync(0);
     chassis.turnToHeading(90,1000);
-    drivePID(15,100,1000);
+    drivePID(10,100,1000);
+        drivePID(10,100,1000);
+
     chassis.turnToHeading(0,1000);
-    drivePID(-30,70,1500); 
+    drivePID(-28,70,1500); 
     resetOdom(false, true, true, false);
-    chassis.moveToPose(-43,-42,220,2000,{.maxSpeed = 40}); // grab 2nd pin
+    chassis.moveToPose(-40,-39,220,2400,{.maxSpeed = 40},false); // grab 2nd pin
     closeClaw();
     delay(200);
-    chassis.moveToPose(-23.6,-43,0,2000,{.maxSpeed = 70},true); //score 2nd pin
-    setCasDegreeAsync(1500);
-    delay(1000);
-    setCasDegreeAsync(600);
+    chassis.turnToHeading(0,1000);
+    chassis.moveToPose(-47,-22,0,2000,{.maxSpeed = 78},true); //score 2nd pin
+    setCasDegreeAsync(1200);
+    delay(2000);
+    setCasDegreeAsync(400);
     delay(400);
     claw.set_value(false);
+        turnToHeadingSmart(0,1000);
     delay(300);
-    drivePID(-36,100,1000);
+    drivePID(-30,100,1000);
     setCasDegreeAsync(0);
     turnToHeadingSmart(-90,1000);
-    drivePID(24,50,1500);
+    drivePID(40,40,2000);
     closeClaw(); // grab 3rd pin 1st matchload
     delay(300);
-    drivePID(-24,1000,1200);
+    drivePID(-18,1000,1200);
     chassis.turnToHeading(0,1000);
-    drivePIDAsync(40,70,1500);
-    setCasDegreeAsync(2000);
-    delay(1000);
-    setCasDegreeAsync(1000);
+    drivePIDAsync(60,70,2500);
+    setCasDegreeAsync(1700);
+    delay(2500);
+    setCasDegreeAsync(600);
     delay(400);
     openClaw(); //score 3rd pin 1st matchload
     delay(300);
-    drivePID(-36,100,1000);
+    drivePID(-30,100,1000);
     setCasDegreeAsync(0);
     turnToHeadingSmart(-90,1000);
-    drivePID(24,50,1500);
+    drivePID(50,50,2500);
     closeClaw(); // grab 4th pin 2nd matchload
     delay(300);
-    drivePID(-24,1000,1200);
+    drivePID(-18,1000,1200);
     chassis.turnToHeading(0,1000);
-         setCasDegreeAsync(2300);
-         delay(300);
-    drivePIDAsync(37,60,1500);
-    delay(1300);
-    setCasDegreeAsync(1500);
-    delay(400);
+        
+    drivePIDAsync(60,40,2500);
+     setCasDegreeAsync(2300);
+         delay(2400);
+    setCasDegreeAsync(2000);
+    delay(500);
     openClaw(); //score 4th pin 2nd matchload
     delay(300);
-    drivePID(-36,100,1000);
+    drivePID(-30,100,1000);
     setCasDegreeAsync(0);
     turnToHeadingSmart(-90,1000);
-    drivePID(24,50,1500);
+    drivePID(54,50,2500);
      closeClaw(); // grab 5th pin 3rd matchload
     delay(300);
-    drivePID(-24,1000,1200);
+    drivePID(-18,1000,1200);
     chassis.turnToHeading(0,1000);
     setCasDegreeAsync(2600);
     delay(600);
-    drivePIDAsync(37,60,1500);
-    delay(1300);
+    drivePIDAsync(60,60,3500);
+    delay(3000);
     setCasDegreeAsync(2000);
     delay(400);
     openClaw(); //score 5th pin 3rd matchload
     delay(300);
-    drivePID(-36,100,1000);
-    setCasDegreeAsync(0);
-    turnToHeadingSmart(-90,1000);
-    drivePID(24,50,1500);
+    drivePID(-10,100,1000);
+    chassis.turnToHeading(90,1000);
+    drivePID(60,100,2000);
+    chassis.turnToHeading(0,1000);
+    drivePID(45,100,2000);
+    // drivePID(-30,100,1000);
+    // setCasDegreeAsync(0);
+    // turnToHeadingSmart(-90,1000);
+    // drivePID(40,50,1500);
+    // closeClaw(); // grab 1st for second stack
+    // drivePID(-18,1000,1200);
+    // chassis.turnToHeading(90,1000);
+    // drivePIDAsync(50,100,2500);
+    // setCasDegreeAsync(1000);
+    // delay(1200);
+    // setCasDegreeAsync(400);
+    // delay(300);
+    // openClaw(); //score 1st for second stack
+    // delay(300);
+    // drivePID(-30,100,1000);
+    // setCasDegreeAsync(0);
+    // turnToHeadingSmart(-90,1000);
+    // drivePID(40,50,1500);
+    // closeClaw(); // grab 2nd for second stack
+    //  drivePID(-18,1000,1200);
+    // chassis.turnToHeading(90,1000);
+    // drivePIDAsync(50,50,3500);
+    // setCasDegreeAsync(1700);
+    // delay(2500);
+    // setCasDegreeAsync(1000);
+    // delay(300);
+    // openClaw(); //score 2nd for second stack
+    // delay(300);
+    // drivePID(-30,100,1000);
+    // setCasDegreeAsync(0);
+    // turnToHeadingSmart(-90,1000);
+    // drivePID(40,50,1500);
+    // closeClaw(); // grab 3rd for second stack
+    // drivePID(-18,1000,1200);
+    // chassis.turnToHeading(90,1000);
+    //     drivePIDAsync(50,50,3500);
+    // setCasDegreeAsync(2200);
+    // delay(2500);
+    // setCasDegreeAsync(1500);
+    // delay(300);
+    // openClaw(); //score 3rd for second stack
+    // delay(300);
+    // drivePID(-30,100,1000);
+    // setCasDegreeAsync(0);
+    // turnToHeadingSmart(-90,1000);
+    // drivePID(40,50,1500);
+    // closeClaw();
+
+
 }

@@ -5,7 +5,7 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/chassis.hpp"
 #include "devices.h"
-#include "auton.h"
+#include "vexAuton.h"
 #include "moveFunctions.h"
 #include <atomic>
 #include <string>
@@ -33,25 +33,25 @@ void setPose(){
      theta = chassis.getPose().theta;
 }
 
-void pivot(bool direction /*True Left spin, false, right spin*/, int timeout){
-    if(direction == true){
+void pivot(bool wheels/*True Left spin, false, right spin*/, int direction /*1 = forward, -1, backward*/, double heading, int timeout){
+    if(wheels == true){
         right_motors.set_brake_mode(E_MOTOR_BRAKE_HOLD);
         right_motors.brake();
         uint32_t start = pros::millis();
-        while (frontDistanceSensor.get() > 80 && pros::millis() - start < timeout) {
-                    left_motors.move(50);
+        while (pros::millis() - start < timeout) {
+                    left_motors.move(50 * direction);
                     pros::delay(10);
         }
 
         left_motors.set_brake_mode(E_MOTOR_BRAKE_HOLD);
         left_motors.brake();        
     }
-    else if(direction == false){
+    else if(wheels == false){
         left_motors.set_brake_mode(E_MOTOR_BRAKE_HOLD);
         left_motors.brake();
         uint32_t start = pros::millis();
-        while (frontDistanceSensor.get() > 80 && pros::millis() - start < timeout) {
-                    right_motors.move(50);
+        while (pros::millis() - start < timeout) {
+                    right_motors.move(50*direction);
                     pros::delay(10);
         }
 
@@ -111,8 +111,8 @@ void openClaw() {
 void closeClaw() { 
     claw.set_value(true);
     delay(200);
-    casLTop.move_absolute(500, 200);
-    casLBottom.move_absolute(500, 200);
-    casRTop.move_absolute(500, 200);
-    casRBottom.move_absolute(500, 200); 
+    casLTop.move_absolute(430, 200);
+    casLBottom.move_absolute(430, 200);
+    casRTop.move_absolute(430, 200);
+    casRBottom.move_absolute(430, 200); 
 }

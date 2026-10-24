@@ -14,6 +14,6 @@ extern void stopCasAsync();
 
 extern void openClaw();
 extern void closeClaw();
-extern void pivot (bool direction /*True Left spin, false, right spin*/, int timeout); 
+extern void pivot (bool wheels /*True Left spin, false, right spin*/, int direction, int timeout); 
 
 #endif

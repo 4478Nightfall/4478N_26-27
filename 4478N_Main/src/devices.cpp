@@ -5,7 +5,7 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/chassis.hpp"
 #include "devices.h"
-#include "auton.h"
+#include "vexAuton.h"
 #include "moveFunctions.h"
 #include <string>
 #include <iostream>
@@ -173,34 +173,34 @@ imu_orientation_e_t DualIMU::get_physical_orientation() const {
 
 // ---------- devices / lemlib setup ----------
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
-pros::Motor mfl(9 , pros::MotorGearset::blue);
-pros::Motor mbl(7, pros::MotorGearset::blue);
-pros::Motor mfr(-10, pros::MotorGearset::blue);
-pros::Motor mbr(-8, pros::MotorGearset::blue);
-pros::MotorGroup right_motors({9, 7}, pros::MotorGearset::blue);
-pros::MotorGroup left_motors({-10, -8}, pros::MotorGearset::blue);
-pros::Motor casLTop(-2, pros::MotorGearset::green);
-pros::Motor casLBottom(1, pros::MotorGearset::green);
-pros::Motor casRTop(16, pros::MotorGearset::green);
-pros::Motor casRBottom(-17, pros::MotorGearset::green);
+pros::Motor mfl(-7 , pros::MotorGearset::blue);
+pros::Motor mbl(-8, pros::MotorGearset::blue);
+pros::Motor mfr(3, pros::MotorGearset::blue);
+pros::Motor mbr(5, pros::MotorGearset::blue);
+pros::MotorGroup right_motors({3, 5}, pros::MotorGearset::blue);
+pros::MotorGroup left_motors({-7, -8}, pros::MotorGearset::blue);
+pros::Motor casLTop(2, pros::MotorGearset::green);
+pros::Motor casLBottom(-1, pros::MotorGearset::green);
+pros::Motor casRTop(-9, pros::MotorGearset::green);
+pros::Motor casRBottom(10, pros::MotorGearset::green);
 
 int casDownVal = 10;
-int casUpVal = 2668; // top limit (degrees) for casLTop
+int casUpVal = 3200; // top limit (degrees) for casLTop
 
 // pneumatic claw on the cascade
 pros::adi::Port claw('E', E_ADI_DIGITAL_OUT);
 
 
-pros::Rotation autonSelector(7);
+pros::Rotation autonSelector(18);
 pros::Rotation hTracker(21);
-pros::Imu imu1(18);
+pros::Imu imu1(15);
 pros::Imu imu2(6);
 DualIMU imu(&imu1, &imu2); // combined imu object
 
-pros::Distance frontDistanceSensor(11);
-pros::Distance backDistance(12);
-pros::Distance leftDistanceSensor(13);
-pros::Distance rightDistanceSensor(9);
+pros::Distance frontDistanceSensor(16);
+pros::Distance backDistance(20);
+pros::Distance leftDistanceSensor(19);
+pros::Distance rightDistanceSensor(11);
 
 Distance* frontDistance = &frontDistanceSensor;
 Distance* backDistancePtr = &backDistance;
@@ -234,9 +234,9 @@ lemlib::ControllerSettings lateral_controller(19,
                                               500,
                                               20);
 
-lemlib::ControllerSettings angular_controller(2,
+lemlib::ControllerSettings angular_controller(1.5,
                                               0,
-                                              3,
+                                              5,
                                               0,
                                               2,
                                               200,

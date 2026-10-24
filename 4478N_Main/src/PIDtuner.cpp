@@ -2,7 +2,7 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/chassis.hpp"
 #include "devices.h"
-#include "auton.h"
+#include "vexAuton.h"
 #include "autonSelector.h"
 #include "moveFunctions.h"
 #include "motionControl.h"
