@@ -46,30 +46,31 @@ void initialize()
                 pros::delay(100);
                 continue;
             }
-            pros::lcd::print(0, "cas L %.0f R %.0f", casLTop.get_position(), casRTop.get_position());
-            // const Pose lem = chassis.getPose();
-            // pros::lcd::print(0, "LEM %5.1f %5.1f h%4.0f", lem.x, lem.y, lem.theta);
+            // pros::lcd::print(1, "cas L %.0f R %.0f", casLTop.get_position(), casRTop.get_position()); 
+            const Pose lem = chassis.getPose();
+            pros::lcd::print(0, "LEM %5.1f %5.1f h%4.0f", lem.x, lem.y, lem.theta);
 
-            // auto distLine = [&](int line, const char* tag, Distance* dev) {
-            //     if (dev == nullptr) {
-            //         pros::lcd::print(line, "%s --- no dev", tag);
-            //         return;
-            //     }
-            //     const std::int32_t mm = dev->get();
-            //     const int sz = dev->get_object_size();
-            //     if (mm >= 0) {
-            //         pros::lcd::print(line, "%s %5.1fin s%3d", tag, static_cast<double>(mm) / 25.4, sz);
-            //     } else {
-            //         pros::lcd::print(line, "%s ---- s%3d", tag, sz);
-            //     }
-            // };
-            // distLine(2, "F", frontDistance);
-            // distLine(3, "B", backDistancePtr);
-            // distLine(4, "L", leftDistance);
-            // distLine(5, "R", rightDistance);
+            auto distLine = [&](int line, const char* tag, Distance* dev) {
+                if (dev == nullptr) {
+                    pros::lcd::print(line, "%s --- no dev", tag);
+                    return;
+                }
+                const std::int32_t mm = dev->get();
+                const int sz = dev->get_object_size();
+                if (mm >= 0) {
+                    pros::lcd::print(line, "%s %5.1fin s%3d", tag, static_cast<double>(mm) / 25.4, sz);
+                } else {
+                    pros::lcd::print(line, "%s ---- s%3d", tag, sz);
+                }
+            };
+            distLine(2, "F", frontDistance);
+            distLine(3, "B", backDistancePtr);
+            distLine(4, "L", leftDistance);
+            distLine(5, "R", rightDistance);
+            displaySelection();
 
-            // pros::lcd::print(6, "dist rst: opctl B/Dpad/Y");
-            // pros::lcd::print(7, "raw in, obj sz");
+            pros::lcd::print(6, "dist rst: opctl B/Dpad/Y");
+            pros::lcd::print(7, "raw in, obj sz");
             pros::delay(100);
         }
     });
@@ -110,71 +111,46 @@ void competition_initialize() {}
 void autonomous()
 {
     
-    // int selection = getAutonSelection(); // Get selected auton routine
+    int selection = getAutonSelection(); // Get selected auton routine
     left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     claw.set_value(true);
-    elimsRightCup();
     // Run the selected autonomous routine
-    // switch (selection)
-    // {
-    // case 0:
-    //     // Skills
-    // workingSkills();
-    //     break;
-    // case 1:
-    //     // PID Testing
-    //     PIDTesting();
-    //     break;
-    // case 2:
-    //     // Solo AWP
-    //     soloAWPTap();
-    //     break;
-    // case 3:
-    //     // Left 3 Long Blast (Last)
-    //     fakeLeft();
-    //     break;
-    // case 4:
-    //     // Left 3 Long First
-    //     Left4_3LongFirst();
-    //     break;
-    // case 5:
-    //     // Right 3 Long Last
-    //     fakeRight();
-    //     break;
-    // case 6:
-    //     // Right 3 Long First
-    //     Right4_3LongFirst();
-    //     break;
-    // case 7:
-    //     // Left 7 Ball Hold
-    //     left7BallHold();
-    //     break;
-    // case 8:
-    //     // Left 7 Ball Wing
-    //     left7BallFast();
-    //     break;
-    // case 9:
-    //     // Right 7 Ball Hold
-    //     right7BallHold();
-    //     break;
-    // case 10:
-    //     // Right 7 Ball Wing
-    //     right7BallWing();
-    //     break;
-    // case 11:
-    //     // Left 4 Wing
-    //     left4Wing();
-    //     break;
-    // case 12:
-    //     // Right 4 Wing
-    //     right4Wing();
-    //     break;
-    // default:
-    //     // Default routine or do nothing
-    //     workingSkills();
-    //     break;
-    // }
+    switch (selection)
+    {
+    case 0:
+        // Skills
+    skills();
+        break;
+    case 1:
+        // PID Testing
+        left2_3();
+        break;
+    case 2:
+        // Solo AWP
+        leftToggle();
+        break;
+    case 3:
+        // Left 3 Long Blast (Last)
+        right2_3();
+        break;
+    case 4:
+        // Left 3 Long First
+        rightToggle();
+        break;
+    case 5:
+        // Right 3 Long Last
+        elimsRight();
+        break;
+    case 6:
+        // Right 3 Long First
+        elimsLeftCup();
+        break;
+    default:
+        // Default routine or do nothing
+        skills();
+        break;
+    }
 
 }
 

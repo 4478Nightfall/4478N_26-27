@@ -60,7 +60,7 @@ void skills(){
     setCasDegreeAsync(2000); 
     delay(1700);
             drivePIDAsync(10,50,500);
-    setCasDegreeAsync(1400);
+    setCasDegreeAsync(1500);
     delay(300);
     openClaw(); //score 3rd pin
     delay(200);
@@ -106,7 +106,7 @@ void skills(){
     turnToHeadingSmart(0,1000,{},false);
     resetOdom(false, true, true, false);
     chassis.moveToPose(0,4,30,2000,{},true);
-    setCasDegreeAsync(1600);
+    setCasDegreeAsync(1800);
     delay(1600);
     drivePID(10,50,500);
     setCasDegree(1000);
@@ -140,7 +140,7 @@ void skills(){
         setCasDegreeAsync(3200);
         turnToHeadingSmart(0,1000,{},false);
     resetOdom(false, true, true, false);
-    chassis.moveToPose(0,4,30,2000,{},true);
+    chassis.moveToPose(-0.5,4,30,2000,{},true);
     delay(1600);
     drivePID(10,50,500);
     setCasDegree(2300);
@@ -239,7 +239,7 @@ void leftToggle(){
     drivePID(13,100,800);
     drivePID(14,100,800);
     chassis.turnToHeading(0,600);
-    drivePID(-40,100,1200);
+    drivePID(-40,100,1300);
     chassis.turnToHeading(90,600);
     drivePID(-100,100,1400);
     drivePID(6,100,500);
@@ -252,7 +252,7 @@ void right2_3(){
     closeClaw();
     chassis.setPose(0,0,-90);
     drivePID(-17,100,800);
-    chassis.turnToHeading(0,800);
+    chassis.turnToHeading(2,800);
     drivePIDAsync(40,100,2000);
     setCasDegreeAsync(1000);
     delay(1500);
@@ -261,13 +261,13 @@ void right2_3(){
     delay(300);
     openClaw();
     delay(200);
-    drivePID(-31,100,1050);
+    drivePID(-33,100,1050);
     setCasDegreeAsync(0);
     chassis.turnToHeading(-90,700);
     drivePID(24,50,1500);
     closeClaw();
     drivePID(-19,100,800);
-    chassis.turnToHeading(0,800);
+    chassis.turnToHeading(2,800);
     drivePIDAsync(56,100,2000);
     setCasDegreeAsync(1300);
     delay(1700);
@@ -276,7 +276,7 @@ void right2_3(){
     delay(300);
     openClaw();
     delay(200);
-    drivePID(-31,100,1200);
+    drivePID(-33,100,1200);
     setCasDegreeAsync(0);
     chassis.turnToHeading(-90,800);
     drivePID(24,50,1500);
@@ -339,50 +339,47 @@ void rightToggle(){
 
 void elimsRight(){
     closeClaw();
-    chassis.setPose(-64,-62,90);
-    chassis.moveToPose(-6,-50,80,3000,{.lead = 0.02},true);
-    setCasDegreeAsync(1200);
-    delay(1500);
-    setCasDegreeAsync(600);
+    chassis.setPose(-66,-50,90);
+    chassis.moveToPose(-6,-50,90,1450,{.lead = 0.02,.minSpeed = 100},true);
+    setCasDegreeAsync(1000);
+    delay(1400);
+        drivePIDAsync(10,50,500);
+    setCasDegreeAsync(400);
     delay(300);
     openClaw(); // first score
     delay(200);
-    turnToHeadingSmart(80,500);
-    drivePID(-40,100,1300);
+    chassis.turnToHeading(70,1000);
+    drivePID(-40,100,1500);
     setCasDegreeAsync(0);
-    chassis.turnToHeading(-95,800);
-    drivePID(28,70,1400);
-    closeClaw(); //matchload 1
-    chassis.setPose(-66.5,-58,chassis.getPose().theta);    
-    drivePID(-34,100,1000);
-    chassis.turnToHeading(0,700);
-    resetOdom(false,true,true,false);
+    chassis.turnToHeading(-107,800);
+    drivePID(40,70,1600);
+    closeClaw();
+    chassis.turnToHeading(-90,500);
+    drivePID(-17,100,800);
+    chassis.turnToHeading(0,800);
+    drivePIDAsync(56,100,2000);
+    setCasDegreeAsync(1300);
+    delay(1700);
+            drivePIDAsync(10,50,500);
+    setCasDegreeAsync(600);
+    delay(300);
+    openClaw();
     delay(200);
-    chassis.moveToPose(-4.5,-4,20,3000,{},true); //score 1
-    setCasDegreeAsync(2300);
-    delay(1900);
+    drivePID(-31,100,1200);
+    setCasDegreeAsync(0);
+    chassis.turnToHeading(-93,800);
+    drivePID(30,50,2000);
+    closeClaw();
+    drivePID(-17,100,800);
+    chassis.turnToHeading(0,800);
+    drivePIDAsync(62,60,2000);
+    setCasDegreeAsync(1800); 
+    delay(1700);
+    drivePIDAsync(10,50,500);
     setCasDegreeAsync(1000);
     delay(300);
-    openClaw(); //score 1
-    chassis.turnToHeading(20,500);
-    drivePID(-58,100,2000);
-    setCasDegreeAsync(0);
-    chassis.turnToHeading(-95,800);
-    drivePID(60,70,2000);
-    closeClaw(); //matchload 2
-    chassis.setPose(-66.5,-58,chassis.getPose().theta);
-    chassis.turnToHeading(-90,400);
-    drivePID(-34,100,1400);
-    chassis.turnToHeading(0,700);
-    resetOdom(false,true,true,false);
+    openClaw();
     delay(200);
-    chassis.setPose(chassis.getPose().x,-60,chassis.getPose().theta);
-    chassis.moveToPose(-4.5,-4,20,3000,{},true); //score 2
-    setCasDegreeAsync(3400);
-    delay(1800);
-    setCasDegreeAsync(1500);
-    delay(700);
-    openClaw(); //score 2
 }
 
 void elimsLeft(){
@@ -395,6 +392,7 @@ void elimsLeft(){
     delay(300);
     openClaw(); // first score
     delay(200);
+    chassis,
     drivePID(-40,100,2000);
     setCasDegreeAsync(0);
     chassis.turnToHeading(-90,800);
