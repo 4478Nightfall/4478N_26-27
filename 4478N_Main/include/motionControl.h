@@ -11,8 +11,6 @@ extern void drivePID(double, double maxSpeedPercent = 100.0, double timeout = 30
 extern void driveProfiled(double inches, double maxSpeedPercent = 100.0, double timeout = 3000);
 extern double profileVelocityRpm(double progressRev, double remainingRev, double maxVelRpm);
 extern void drivePIDAsync(double, double maxSpeedPercent = 100.0, double timeout = 3000);
-extern void stopDrivePIDAsync();
-extern bool isDrivePIDRunning();
 extern void driveForTime(int, int);
 extern void turnToHeadingSmart(float theta, int timeout, lemlib::TurnToHeadingParams params = {}, bool async = true);
 

@@ -67,7 +67,7 @@ void pivot(bool wheels/*True Left spin, false, right spin*/, int direction /*1 =
 // on its own - no software tolerance or brake latch, so nothing to oscillate
 static const int casMaxRpm = 200; // green cartridge
 
-static void casGoTo(double targetDeg) {
+void casGoTo(double targetDeg) {
     casLTop.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     casLBottom.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     casRTop.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
@@ -78,32 +78,6 @@ static void casGoTo(double targetDeg) {
     casRBottom.move_absolute(targetDeg, casMaxRpm);
 }
 
-// blocking version - returns once both cas motors have arrived (or after 2s).
-// the motors keep holding the target after this returns.
-void setCasDegree(double targetDeg) {
-    casGoTo(targetDeg);
-    uint32_t start = pros::millis();
-    while ((fabs(casLTop.get_position() - targetDeg) > 1.0 ||
-            fabs(casRTop.get_position() - targetDeg) > 1.0) &&
-           pros::millis() - start < 2000) {
-        pros::delay(20);
-    }
-}
-
-// non-blocking version - sets the target and returns immediately so cas can
-// move at the same time as driving or other tasks
-void setCasDegreeAsync(double targetDeg) {
-    casGoTo(targetDeg);
-}
-
-// stops cas where it currently is
-void stopCasAsync() {
-    casLTop.brake();
-    casLBottom.brake();
-    casRTop.brake();
-    casRBottom.brake();
-}
-
 // ---------- claw ----------
 void openClaw() { 
     claw.set_value(false); 
@@ -111,8 +85,5 @@ void openClaw() {
 void closeClaw() { 
     claw.set_value(true);
     delay(200);
-    casLTop.move_absolute(430, 200);
-    casLBottom.move_absolute(430, 200);
-    casRTop.move_absolute(430, 200);
-    casRBottom.move_absolute(430, 200); 
+    casGoTo(430);
 }

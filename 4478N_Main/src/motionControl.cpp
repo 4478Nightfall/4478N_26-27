@@ -349,21 +349,6 @@ void drivePIDAsync(double fwdVal, double maxSpeedPercent, double timeout) {
         "drivePIDAsync");
 }
 
-void stopDrivePIDAsync() {
-    drivePidStopRequested = true;
-    for (int i = 0; i < 100 && drivePidRunning; ++i) {
-        pros::delay(10);
-    }
-    if (drivePidTaskPtr != nullptr && !drivePidRunning) {
-        delete drivePidTaskPtr;
-        drivePidTaskPtr = nullptr;
-    }
-}
-
-bool isDrivePIDRunning() {
-    return static_cast<bool>(drivePidRunning);
-}
-
 void driveForTime(int power, int time)
 {
     left_motors.move(power);

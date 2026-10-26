@@ -22,7 +22,7 @@ int getAutonSelection()
 void displaySelection()
 {
     int selection = getAutonSelection();
-    pros::lcd::set_text(1, "Autonomous Selector");
+    pros::lcd::set_text(4, "Autonomous Selector");
 
     std::string autonName;
     switch (selection)
@@ -48,10 +48,13 @@ void displaySelection()
     case 6:
         autonName = "Elims Left Cup";
         break;
+    case 7: 
+        autonName = "PID tuning";
+        break;
     default:
         autonName = "Unknown";
     }
 
     // Show the selected routine name and the raw rotation sensor value
-    pros::lcd::set_text(1, "Selected: " + autonName);
+    pros::lcd::set_text(5, "Selected: " + autonName);
 }

@@ -8,8 +8,7 @@ using namespace pros;
 
 extern void setPose();
 // ---------- mechanism control (callable from autonomous and opcontrol) ----------
-extern void setCasDegree(double targetDeg);
-extern void setCasDegreeAsync(double targetDeg);
+extern void casGoTo(double targetDeg);
 extern void stopCasAsync();
 
 extern void openClaw();

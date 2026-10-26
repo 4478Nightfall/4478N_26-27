@@ -234,14 +234,14 @@ lemlib::ControllerSettings lateral_controller(19,
                                               500,
                                               20);
 
-lemlib::ControllerSettings angular_controller(1.5,
+lemlib::ControllerSettings angular_controller(6,
                                               0,
-                                              5,
+                                              24,
                                               0,
-                                              2,
-                                              200,
-                                              4,
-                                              300,
+                                              1,
+                                              100,
+                                              3,
+                                              500,
                                               0);
 
 ExpoDriveCurve throttleCurve(3,

@@ -42,36 +42,37 @@ void initialize()
 
     pros::Task screen_task([&]() {
         while (true) {
-            if (pidTuningActive) {
-                pros::delay(100);
-                continue;
-            }
-            // pros::lcd::print(1, "cas L %.0f R %.0f", casLTop.get_position(), casRTop.get_position()); 
-            const Pose lem = chassis.getPose();
-            pros::lcd::print(0, "LEM %5.1f %5.1f h%4.0f", lem.x, lem.y, lem.theta);
+            // if (pidTuningActive) {
+            //     pros::delay(100);
+            //     continue;
+            // }
+            // // pros::lcd::print(1, "cas L %.0f R %.0f", casLTop.get_position(), casRTop.get_position()); 
+            // const Pose lem = chassis.getPose();
+            // pros::lcd::print(0, "LEM %5.1f %5.1f h%4.0f", lem.x, lem.y, lem.theta);
 
-            auto distLine = [&](int line, const char* tag, Distance* dev) {
-                if (dev == nullptr) {
-                    pros::lcd::print(line, "%s --- no dev", tag);
-                    return;
-                }
-                const std::int32_t mm = dev->get();
-                const int sz = dev->get_object_size();
-                if (mm >= 0) {
-                    pros::lcd::print(line, "%s %5.1fin s%3d", tag, static_cast<double>(mm) / 25.4, sz);
-                } else {
-                    pros::lcd::print(line, "%s ---- s%3d", tag, sz);
-                }
-            };
-            distLine(2, "F", frontDistance);
-            distLine(3, "B", backDistancePtr);
-            distLine(4, "L", leftDistance);
-            distLine(5, "R", rightDistance);
+            // auto distLine = [&](int line, const char* tag, Distance* dev) {
+            //     if (dev == nullptr) {
+            //         pros::lcd::print(line, "%s --- no dev", tag);
+            //         return;
+            //     }
+            //     const std::int32_t mm = dev->get();
+            //     const int sz = dev->get_object_size();
+            //     if (mm >= 0) {
+            //         pros::lcd::print(line, "%s %5.1fin s%3d", tag, static_cast<double>(mm) / 25.4, sz);
+            //     } else {
+            //         pros::lcd::print(line, "%s ---- s%3d", tag, sz);
+            //     }
+            // };
+            // distLine(2, "F", frontDistance);
+            // distLine(3, "B", backDistancePtr);
+            // distLine(4, "L", leftDistance);
+            // distLine(5, "R", rightDistance);
             displaySelection();
 
-            pros::lcd::print(6, "dist rst: opctl B/Dpad/Y");
-            pros::lcd::print(7, "raw in, obj sz");
-            pros::delay(100);
+            // pros::lcd::print(6, "dist rst: opctl B/Dpad/Y");
+            // pros::lcd::print(7, "raw in, obj sz");
+            // pros::delay(100);
+            pros::delay(20);
         }
     });
 }
@@ -146,9 +147,12 @@ void autonomous()
         // Right 3 Long First
         elimsLeftCup();
         break;
+    case 7:
+        PIDtuning();
+        break;
     default:
         // Default routine or do nothing
-        skills();
+        PIDtuning();
         break;
     }
 
@@ -174,11 +178,9 @@ void opcontrol()
 
     // Main driver control loop
     bool clawOpen = true;
-    uint32_t clawReadyAt = 0; // millis() time when auto-close is allowed again
-    const double clawLiftDeg = 400; // cascade lift (motor degrees) after the claw closes
-    bool clawLifting = false;
-    bool cascadeReturning = false; // R1: drive the cascade back down to 0
-    double clawLiftTarget = 0;
+    // true while a casGoTo move (claw lift or R1 return) is running; the motors hold the
+    // target on their own, so the manual code below must not brake them
+    bool cascadeAuto = false;
     claw.set_value(false);
     while (true)
     {
@@ -208,32 +210,12 @@ void opcontrol()
                                    controller.get_digital(E_CONTROLLER_DIGITAL_L2);
         if (cascadeManual)
         {
-            clawLifting = false; // driver input overrides the automatic lift
-            cascadeReturning = false;
+            cascadeAuto = false; // driver input overrides the automatic move
         }
 
-        if (cascadeReturning)
+        if (cascadeAuto)
         {
-            // move_absolute is running; let it finish unless the driver takes over
-            if (fabs(casLTop.get_position()) < 5) {
-                cascadeReturning = false;
-            }
-        }
-        else if (clawLifting)
-        {
-            // drive up like L1 does until we reach the target
-            if (casLTop.get_position() >= clawLiftTarget) {
-                clawLifting = false;
-                casLTop.brake();
-                casLBottom.brake();
-                casRTop.brake();
-                casRBottom.brake();
-            } else {
-                casLTop.move(127);
-                casLBottom.move(127);
-                casRTop.move(127);
-                casRBottom.move(127);
-            }
+            // casGoTo is running; leave the motors alone
         }
         else if (controller.get_digital(E_CONTROLLER_DIGITAL_L1))
         {
@@ -280,36 +262,15 @@ void opcontrol()
             delay(200);
             if (wasOpen) {
                 // closing on a game piece: lift the cascade ~60 degrees
-                clawLiftTarget = fmin(casLTop.get_position() + clawLiftDeg, casUpVal);
-                clawLifting = true;
-                cascadeReturning = false;
+                casGoTo(420);
+                cascadeAuto = true;
             }
         }
         if (controller.get_digital_new_press(E_CONTROLLER_DIGITAL_R1)){
             // send the cascade back to 0 degrees
-            clawLifting = false;
-            cascadeReturning = true;
-            casLTop.move_absolute(0, 200);
-            casLBottom.move_absolute(0, 200);
-            casRTop.move_absolute(0, 200);
-            casRBottom.move_absolute(0, 200);
+            casGoTo(0);
+            cascadeAuto = true;
         }
-        //     if (clawOpen) clawReadyAt = pros::millis() + 1600; // no auto-close for 1 s after opening
-        // }
-        // if ((controller.get_digital(E_CONTROLLER_DIGITAL_R2) && clawOpen == false)) {
-        //     clawOpen = true;
-        //     claw.set_value(false);
-        //     clawReadyAt = pros::millis() + 1600; // no auto-close for 1 s after opening
-        // }
-        // int clawDist = frontDistanceSensor.get();
-        // if (clawDist > 0 && clawDist <= 67 && clawOpen == true && pros::millis() >= clawReadyAt) {
-        //     clawOpen = false;
-        //     claw.set_value(true);
-    // }
-
-
-    
-
         // delay to save resources
         pros::delay(25);
     }
