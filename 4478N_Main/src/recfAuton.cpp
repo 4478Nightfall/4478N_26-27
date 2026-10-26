@@ -160,46 +160,60 @@ void skills(){
 
 }
 
-void left2_3(){
+void left3_4(){
     closeClaw();
-    chassis.setPose(0,0,-90);
-    drivePID(-17,100,800);
-    chassis.turnToHeading(180,800);
-    drivePIDAsync(40,100,2000);
-    casGoTo(1000);
-    delay(1500);
+    chassis.setPose(0,0,153);
+    drivePIDAsync(45,100,600);
+    casGoTo(800);
+    delay(600);
     drivePIDAsync(10,50,500);
-    casGoTo(300);
+    casGoTo(200);
     delay(300);
     openClaw();
-    delay(200);
-    drivePID(-32,100,1050);
+    chassis.turnToHeading(170,500);
+    drivePID(-32,100,1200);
+    
     casGoTo(0);
-    chassis.turnToHeading(-86,700);
-    drivePID(24,50,1500);
+    chassis.turnToHeading(-90,700);
+    drivePID(24,80,1000);
     closeClaw();
-    drivePID(-17,100,800);
-    chassis.turnToHeading(180,800);
-    drivePIDAsync(56,100,2000);
+    drivePID(-17.5,100,700);
+    chassis.turnToHeading(180,700);
+    drivePIDAsync(56,100,1300);
     casGoTo(1300);
-    delay(1700);
+    delay(1300);
     drivePIDAsync(10,50,500);
     casGoTo(600);
     delay(300);
     openClaw();
     delay(200);
-    drivePID(-32,100,1200);
+    drivePID(-32,100,950);
     casGoTo(0);
-    chassis.turnToHeading(-87,800);
-    drivePID(24,50,1500);
+    chassis.turnToHeading(-90,700);
+
+    drivePID(24,80,1100);
     closeClaw();
-    drivePID(-18,100,800);
+    drivePID(-14 ,100,700);
+        casGoTo(2000);
     chassis.turnToHeading(180,800);
-    drivePIDAsync(56,60,2000);
-    casGoTo(2000);
-    delay(1700);
+    drivePID(56,80,1300);
     drivePIDAsync(10,50,500);
     casGoTo(1400);
+    delay(300);
+    openClaw();
+    delay(200);
+    drivePID(-32,100,1200);
+    casGoTo(0);
+    chassis.turnToHeading(-90,800);
+    drivePID(24,100,1150);
+    closeClaw();
+    drivePID(-17.5,100,800);
+    chassis.turnToHeading(180,800);
+    drivePIDAsync(56,80,1300);
+    casGoTo(2500);
+    delay(1500);
+    drivePIDAsync(10,50,500);
+    casGoTo(2000);
     delay(300);
     openClaw();
     delay(200);

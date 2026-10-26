@@ -236,7 +236,7 @@ lemlib::ControllerSettings lateral_controller(19,
 
 lemlib::ControllerSettings angular_controller(6,
                                               0,
-                                              24,
+                                              34,
                                               0,
                                               1,
                                               100,
