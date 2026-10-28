@@ -125,7 +125,7 @@ void autonomous()
         break;
     case 1:
         // PID Testing
-        left2_3();
+        left3_4Odom();
         break;
     case 2:
         // Solo AWP
@@ -262,7 +262,7 @@ void opcontrol()
             delay(200);
             if (wasOpen) {
                 // closing on a game piece: lift the cascade ~60 degrees
-                casGoTo(420);
+                casGoTo(casLTop.get_position() + 420);
                 cascadeAuto = true;
             }
         }
