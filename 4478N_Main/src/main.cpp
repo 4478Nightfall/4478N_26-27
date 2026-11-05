@@ -125,7 +125,7 @@ void autonomous()
         break;
     case 1:
         // PID Testing
-        left3_4Odom();
+        left3_4();
         break;
     case 2:
         // Solo AWP
@@ -133,7 +133,7 @@ void autonomous()
         break;
     case 3:
         // Left 3 Long Blast (Last)
-        right2_3();
+        right3_4();
         break;
     case 4:
         // Left 3 Long First
