@@ -5,6 +5,7 @@
 using namespace pros;
 
 extern void skills();
+extern void skillsNew();
 extern void left3_4();
 extern void leftToggle();
 extern void right2_3();
@@ -14,6 +15,6 @@ extern void elimsRight();
 extern void elimsLeft();
 extern void elimsRightCup();
 extern void elimsLeftCup();
-
+extern void left3_4Alliance();
 
 #endif

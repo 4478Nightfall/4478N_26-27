@@ -121,11 +121,11 @@ void autonomous()
     {
     case 0:
         // Skills
-    skills();
+    skillsNew();
         break;
     case 1:
         // PID Testing
-        left3_4();
+        left3_4Alliance();
         break;
     case 2:
         // Solo AWP

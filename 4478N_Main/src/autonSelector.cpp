@@ -31,13 +31,13 @@ void displaySelection()
         autonName = "Skills";
         break;
     case 1:
-        autonName = "Left 2_3";
+        autonName = "Left 3_4";
         break;
     case 2:
         autonName = "Left Toggle";
         break;
     case 3:
-        autonName = "Right 2_3";
+        autonName = "Right 3_4";
         break;
     case 4:
         autonName = "Right toggle";

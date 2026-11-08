@@ -13,7 +13,7 @@ using namespace lemlib;
 // sensor to center along each face (in) -- should match header constants
 double frontOffset = 2.5;
 double backOffset = 0;
-double leftOffset = -6;
+double leftOffset = 6;
 double rightOffset = 6;
 // *EdgeOffsets: along bumper (F/B + = right +x, L/R + = forward +y). Cardinal*sin(d) added to perp distance after perpAlongNormal.
 double frontEdgeOffset = 0;
