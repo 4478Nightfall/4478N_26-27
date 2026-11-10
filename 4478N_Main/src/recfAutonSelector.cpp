@@ -1,5 +1,7 @@
 #include "devices.h"
-#include "autonSelector.h"
+#include "recfAutonSelector.h"
+#include "recfAuton.h"
+#include "vexAuton.h"
 #include <string>
 using namespace pros;
 using namespace lemlib;
@@ -7,21 +9,9 @@ using namespace lemlib;
 const int numAutons = 15;
 
 // ---------- auton selector (rotation sensor) ----------
-int getAutonSelection()
+void displayRECFSelection()
 {
-    double rotation = autonSelector.get_position() / 100.0;
-
-    while (rotation < 0)
-        rotation += 360;
-    rotation = fmod(rotation, 360);
-
-    int segmentSize = 360 / numAutons;
-    return (int)(rotation / segmentSize);
-}
-
-void displaySelection()
-{
-    int selection = getAutonSelection();
+    int selection = getAutonSelection(numAutons);
     pros::lcd::set_text(4, "Autonomous Selector");
 
     std::string autonName;
@@ -57,4 +47,39 @@ void displaySelection()
 
     // Show the selected routine name and the raw rotation sensor value
     pros::lcd::set_text(5, "Selected: " + autonName);
+}
+
+// ---------- run the RECF auton picked on the selector ----------
+void runRecfAuton()
+{
+    switch (getAutonSelection(numAutons))
+    {
+    case 0:
+        skillsNew();
+        break;
+    case 1:
+        left3_4Alliance();
+        break;
+    case 2:
+        leftToggle();
+        break;
+    case 3:
+        right3_4();
+        break;
+    case 4:
+        rightToggle();
+        break;
+    case 5:
+        elimsRight();
+        break;
+    case 6:
+        elimsLeftCup();
+        break;
+    case 7:
+        PIDtuning();
+        break;
+    default:
+        PIDtuning();
+        break;
+    }
 }

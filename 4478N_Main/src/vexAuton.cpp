@@ -8,7 +8,6 @@
 #include "pros/adi.h"
 #include "sensor.h"
 #include "moveFunctions.h"
-#include "autonSelector.h"
 #include <string>
 #include <iostream>
 #include <cstdio>
@@ -48,19 +47,6 @@ void accelDecelTest(){
     stopFastDatalogging();
 }
 
-// validation run for driveProfiled - same distances the roadmap lists
-void profileTest(){
-    left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
-    right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
-    driveProfiled(12);
-    pros::delay(500);
-    driveProfiled(48);
-    pros::delay(500);
-    driveProfiled(-12);
-    pros::delay(500);
-    driveProfiled(-36);
-}
-
 void PIDtuning(){
     chassis.setPose(0,0,0);
     chassis.turnToHeading(180,2000,{},false);
@@ -81,7 +67,7 @@ void allianceLeft(){
     resetOdom(true,false,false,false);
     chassis.setPose(-10.5, chassis.getPose().y, chassis.getPose().theta);
     // chassis.turnToHeading(225,1000);
-        chassis.moveToPose(-30,-51,225,1300,{.forwards = false,.minSpeed = 60},true);//go to first score
+    chassis.moveToPose(-30,-51,225,1300,{.forwards = false,.minSpeed = 60},true);//go to first score
     delay(1300);
     delay(400);
     drivePID(10,100,1500);
@@ -605,5 +591,37 @@ void skillsEasy(){
     // drivePID(40,50,1500);
     // closeClaw();
 
+
+}
+
+void allianceClose(){
+    closeClaw();
+    chassis.setPose(-65,0,90);
+    drivePID(-500,100,300);//toggle`
+    drivePID(9,100,300);
+    drivePID(-500,100,300);//toggle
+    chassis.setPose(-65,0,chassis.getPose().theta);
+    casGoTo(600);
+    chassis.moveToPose(-51,-22,180,1450,{.horizontalDrift = 5, .lead = 0.2},false); //score preload
+    casGoTo(0);
+    delay(200);
+    openClaw();
+    delay(100);
+    drivePID(-13,100,800);
+    casGoTo(0);
+    chassis.turnToHeading(230,700);
+    drivePID(29,100,1200);
+    chassis.swingToHeading(270,DriveSide::RIGHT,800,{},false);
+    closeClaw();
+    drivePID(-10,100,600);
+    shimmy(180,1000);
+    casGoTo(1200);
+    drivePID(-30,100,1300);
+    chassis.setPose(-54,-13,chassis.getPose().theta);
+    chassis.moveToPose(-42,-22,chassis.getPose().theta,1450,{.horizontalDrift = 10, .lead = 0.1},false); //score preload
+    casGoTo(600);
+    delay(200);
+    openClaw();
+    delay(100);
 
 }

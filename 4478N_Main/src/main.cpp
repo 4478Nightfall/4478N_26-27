@@ -4,7 +4,8 @@
 #include "devices.h"
 #include "vexAuton.h"
 #include "recfAuton.h"
-#include "autonSelector.h"
+#include "recfAutonSelector.h"
+#include "vexAutonSelector.h"
 #include "moveFunctions.h"
 #include "PIDtuner.h"
 #include "pros/misc.h"
@@ -13,6 +14,22 @@
 #include <cstdint>
 using namespace pros;
 using namespace lemlib;
+
+// true = VEX autons, false = RECF autons
+const bool useVexAutons = false;
+
+// ---------- auton selector (rotation sensor), shared by RECF and VEX selectors ----------
+int getAutonSelection(int numAutons)
+{
+    double rotation = autonSelector.get_position() / 100.0;
+
+    while (rotation < 0)
+        rotation += 360;
+    rotation = fmod(rotation, 360);
+
+    int segmentSize = 360 / numAutons;
+    return (int)(rotation / segmentSize);
+}
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -67,7 +84,7 @@ void initialize()
             // distLine(3, "B", backDistancePtr);
             // distLine(4, "L", leftDistance);
             // distLine(5, "R", rightDistance);
-            displaySelection();
+            displayVEXSelection();
 
             // pros::lcd::print(6, "dist rst: opctl B/Dpad/Y");
             // pros::lcd::print(7, "raw in, obj sz");
@@ -111,51 +128,12 @@ void competition_initialize() {}
  */
 void autonomous()
 {
-    
-    int selection = getAutonSelection(); // Get selected auton routine
     left_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     right_motors.set_brake_mode(MOTOR_BRAKE_HOLD);
     claw.set_value(true);
-    // Run the selected autonomous routine
-    switch (selection)
-    {
-    case 0:
-        // Skills
-    skillsNew();
-        break;
-    case 1:
-        // PID Testing
-        left3_4Alliance();
-        break;
-    case 2:
-        // Solo AWP
-        leftToggle();
-        break;
-    case 3:
-        // Left 3 Long Blast (Last)
-        right3_4();
-        break;
-    case 4:
-        // Left 3 Long First
-        rightToggle();
-        break;
-    case 5:
-        // Right 3 Long Last
-        elimsRight();
-        break;
-    case 6:
-        // Right 3 Long First
-        elimsLeftCup();
-        break;
-    case 7:
-        PIDtuning();
-        break;
-    default:
-        // Default routine or do nothing
-        PIDtuning();
-        break;
-    }
 
+    chassis.setPose(0, -65, 270);
+    runVexAuton();
 }
 
 /**

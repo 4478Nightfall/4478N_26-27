@@ -5,10 +5,10 @@
 #include "lemlib/chassis/chassis.hpp"
 #include "devices.h"
 #include "recfAuton.h"
+#include "vexAuton.h"
 #include "pros/adi.h"
 #include "sensor.h"
 #include "moveFunctions.h"
-#include "autonSelector.h"
 #include <string>
 #include <iostream>
 #include <cstdio>
