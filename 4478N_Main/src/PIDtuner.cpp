@@ -3,7 +3,7 @@
 #include "lemlib/chassis/chassis.hpp"
 #include "devices.h"
 #include "vexAuton.h"
-#include "autonSelector.h"
+#include "recfAutonSelector.h"
 #include "moveFunctions.h"
 #include "motionControl.h"
 #include "pros/misc.h"

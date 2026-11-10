@@ -19,4 +19,5 @@ extern void close();
 extern void far();
 extern void skillsHard();
 extern void skillsEasy();
+extern void allianceClose();
 #endif

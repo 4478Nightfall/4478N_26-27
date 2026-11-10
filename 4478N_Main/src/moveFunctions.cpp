@@ -33,7 +33,7 @@ void setPose(){
      theta = chassis.getPose().theta;
 }
 
-void pivot(bool wheels/*True Left spin, false, right spin*/, int direction /*1 = forward, -1, backward*/, double heading, int timeout){
+void pivot(bool wheels/*True Left spin, false, right spin*/, int direction /*1 = forward, -1, backward*/, int timeout){
     if(wheels == true){
         right_motors.set_brake_mode(E_MOTOR_BRAKE_HOLD);
         right_motors.brake();

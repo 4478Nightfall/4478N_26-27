@@ -358,6 +358,27 @@ void driveForTime(int power, int time)
     right_motors.brake();
 }
 
+void shimmy(int deg, int timeout){
+    uint32_t start = pros::millis();
+    auto error = [&]{ return lemlib::angleError(deg, chassis.getPose().theta, false); };
+
+    if(error() > 0){
+        while(error() > 0 && pros::millis() - start < timeout){
+            left_motors.move(80);
+            right_motors.move(-40);
+            pros::delay(10);
+        }
+    }
+    else{
+        while(error() < 0 && pros::millis() - start < timeout){
+            left_motors.move(-40);
+            right_motors.move(80);
+            pros::delay(10);
+        }
+    }
+    left_motors.brake();
+    right_motors.brake();
+}
 
 void turnToHeadingSmart(float theta, int timeout, TurnToHeadingParams params, bool async)
 {
