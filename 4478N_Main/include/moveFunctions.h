@@ -8,13 +8,11 @@ using namespace pros;
 
 extern void setPose();
 // ---------- mechanism control (callable from autonomous and opcontrol) ----------
-extern void toggleIntPos();
-extern void rollerSpin(int vel);
-extern void setCasDegree(double targetDeg);
-extern void setCasDegreeAsync(double targetDeg);
+extern void casGoTo(double targetDeg);
 extern void stopCasAsync();
-extern void intakeDown();
-extern void intakeSpin(int vel);
-extern void justIntakeSpin(int vel);
+
+extern void openClaw();
+extern void closeClaw();
+extern void pivot (bool wheels /*True Left spin, false, right spin*/, int direction, int timeout); 
 
 #endif

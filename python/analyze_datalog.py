@@ -211,25 +211,6 @@ ax.grid(True, alpha=0.3)
 plt.tight_layout()
 save_and_show('motor_positions_avg')
 
-# Plot color sensor data over time - COMMENTED OUT (columns don't exist in current CSV)
-# fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 10))
-# ax1.plot(df['timestamp'], df['colorHue'], 'r-', label='Hue')
-# ax1.set_ylabel('Hue (0-360°)')
-# ax1.set_title('Color Sensor Data Over Time')
-# ax1.legend()
-# ax1.grid(True, alpha=0.3)
-# ax2.plot(df['timestamp'], df['colorSat'], 'g-', label='Saturation')
-# ax2.set_ylabel('Saturation (0-1)')
-# ax2.legend()
-# ax2.grid(True, alpha=0.3)
-# ax3.plot(df['timestamp'], df['colorProx'], 'b-', label='Proximity')
-# ax3.set_xlabel('Time (ms)')
-# ax3.set_ylabel('Proximity (0-255)')
-# ax3.legend()
-# ax3.grid(True, alpha=0.3)
-# plt.tight_layout()
-# plt.show(block=False)
-
 # Plot all chassis motor encoders together to detect deviations
 individual_motor_bases = ['mfl', 'mbl', 'mfr', 'mbr']
 left_side_motors = ['mfl', 'mbl']
