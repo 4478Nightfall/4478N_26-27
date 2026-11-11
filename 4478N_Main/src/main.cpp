@@ -65,25 +65,25 @@ void initialize()
             // }
             // // pros::lcd::print(1, "cas L %.0f R %.0f", casLTop.get_position(), casRTop.get_position()); 
             // const Pose lem = chassis.getPose();
-            // pros::lcd::print(0, "LEM %5.1f %5.1f h%4.0f", lem.x, lem.y, lem.theta);
+            pros::lcd::print(0, "LEM %5.1f %5.1f h%4.0f", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta);
 
-            // auto distLine = [&](int line, const char* tag, Distance* dev) {
-            //     if (dev == nullptr) {
-            //         pros::lcd::print(line, "%s --- no dev", tag);
-            //         return;
-            //     }
-            //     const std::int32_t mm = dev->get();
-            //     const int sz = dev->get_object_size();
-            //     if (mm >= 0) {
-            //         pros::lcd::print(line, "%s %5.1fin s%3d", tag, static_cast<double>(mm) / 25.4, sz);
-            //     } else {
-            //         pros::lcd::print(line, "%s ---- s%3d", tag, sz);
-            //     }
-            // };
-            // distLine(2, "F", frontDistance);
-            // distLine(3, "B", backDistancePtr);
-            // distLine(4, "L", leftDistance);
-            // distLine(5, "R", rightDistance);
+            auto distLine = [&](int line, const char* tag, Distance* dev) {
+                if (dev == nullptr) {
+                    pros::lcd::print(line, "%s --- no dev", tag);
+                    return;
+                }
+                const std::int32_t mm = dev->get();
+                const int sz = dev->get_object_size();
+                if (mm >= 0) {
+                    pros::lcd::print(line, "%s %5.1fin s%3d", tag, static_cast<double>(mm) / 25.4, sz);
+                } else {
+                    pros::lcd::print(line, "%s ---- s%3d", tag, sz);
+                }
+            };
+            distLine(2, "F", frontDistance);
+            distLine(3, "B", backDistancePtr);
+            distLine(4, "L", leftDistance);
+            distLine(5, "R", rightDistance);
             displayVEXSelection();
 
             // pros::lcd::print(6, "dist rst: opctl B/Dpad/Y");
@@ -222,6 +222,20 @@ void opcontrol()
                 casLBottom.move(-127);
                 casRTop.move(-127);
                 casRBottom.move(-127);
+            }
+        }
+        else if (controller.get_digital(E_CONTROLLER_DIGITAL_DOWN))
+        {
+            if (casLTop.get_position() <= casDownVal || casRTop.get_position() <= casDownVal) {
+                casLTop.brake();
+                casLBottom.brake();
+                casRTop.brake();
+                casRBottom.brake();
+            } else {
+                casLTop.move(-20);
+                casLBottom.move(-20);
+                casRTop.move(-20);
+                casRBottom.move(-20);
             }
         }
         else

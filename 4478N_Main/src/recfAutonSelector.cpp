@@ -12,7 +12,7 @@ const int numAutons = 15;
 void displayRECFSelection()
 {
     int selection = getAutonSelection(numAutons);
-    pros::lcd::set_text(4, "Autonomous Selector");
+    pros::lcd::set_text(1, "Autonomous Selector");
 
     std::string autonName;
     switch (selection)
@@ -46,7 +46,7 @@ void displayRECFSelection()
     }
 
     // Show the selected routine name and the raw rotation sensor value
-    pros::lcd::set_text(5, "Selected: " + autonName);
+    pros::lcd::set_text(2, "Selected: " + autonName);
 }
 
 // ---------- run the RECF auton picked on the selector ----------

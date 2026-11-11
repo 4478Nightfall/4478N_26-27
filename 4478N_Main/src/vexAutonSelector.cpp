@@ -11,7 +11,7 @@ const int numAutons = 12;
 void displayVEXSelection()
 {
     int selection = getAutonSelection(numAutons);
-    pros::lcd::set_text(4, "VEX Autonomous Selector");
+    pros::lcd::set_text(1, "VEX Autonomous Selector");
 
     std::string autonName;
     switch (selection)
@@ -57,7 +57,7 @@ void displayVEXSelection()
     }
 
     // Show the selected routine name
-    pros::lcd::set_text(5, "Selected: " + autonName);
+    pros::lcd::set_text(2, "Selected: " + autonName);
 }
 
 // ---------- run the VEX auton picked on the selector ----------
