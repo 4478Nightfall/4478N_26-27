@@ -5,7 +5,7 @@
 using namespace pros;
 using namespace lemlib;
 
-const int numAutons = 12;
+const int numAutons = 6; // must divide 360 evenly (selector splits the dial into equal segments)
 
 // ---------- auton selector (rotation sensor) ----------
 void displayVEXSelection()
@@ -17,46 +17,27 @@ void displayVEXSelection()
     switch (selection)
     {
     case 0:
-        autonName = "Skills Hard";
+        autonName = "Skills";
         break;
     case 1:
-        autonName = "Skills Easy";
+        autonName = "Alliance Close Alleys";
         break;
     case 2:
-        autonName = "Alliance Left";
+        autonName = "Alliance Close 3 Pin";
         break;
     case 3:
-        autonName = "Alliance Close";
+        autonName = "Datalogging Route";
         break;
     case 4:
-        autonName = "Neutral Left";
+        autonName = "Accel/Decel Test";
         break;
     case 5:
-        autonName = "Neutral Right";
-        break;
-    case 6:
-        autonName = "Neutral Left Simple";
-        break;
-    case 7:
-        autonName = "Neutral Right Simple";
-        break;
-    case 8:
-        autonName = "Helper Solo";
-        break;
-    case 9:
-        autonName = "Close";
-        break;
-    case 10:
-        autonName = "Far";
-        break;
-    case 11:
-        autonName = "PID tuning";
+        autonName = "PID Tuning";
         break;
     default:
         autonName = "Unknown";
     }
 
-    // Show the selected routine name
     pros::lcd::set_text(2, "Selected: " + autonName);
 }
 
@@ -66,40 +47,24 @@ void runVexAuton()
     switch (getAutonSelection(numAutons))
     {
     case 0:
-        skillsHard();
+        vexSkills();
         break;
     case 1:
-        skillsEasy();
+        allianceCloseAlleys();
         break;
     case 2:
-        allianceLeft();
+        allianceClose3Pin();
         break;
     case 3:
-        allianceClose();
+        dataloggingRoute();
         break;
     case 4:
-        neutralLeft();
+        accelDecelTest();
         break;
     case 5:
-        neutralRight();
-        break;
-    case 6:
-        neutralLeftSimple();
-        break;
-    case 7:
-        neutralRightSimple();
-        break;
-    case 8:
-        helperSolo();
-        break;
-    case 9:
-        close();
-        break;
-    case 10:
-        far();
+        PIDtuning();
         break;
     default:
-        PIDtuning();
         break;
     }
 }

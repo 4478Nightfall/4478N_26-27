@@ -9,10 +9,12 @@ using namespace pros;
 extern void setPose();
 // ---------- mechanism control (callable from autonomous and opcontrol) ----------
 extern void casGoTo(double targetDeg);
+extern void releaseStack(int timeout = 600);
 extern void stopCasAsync();
 
 extern void openClaw();
 extern void closeClaw();
+extern void autoClamp();
 extern void pivot (bool wheels /*True Left spin, false, right spin*/, int direction, int timeout); 
 
 #endif

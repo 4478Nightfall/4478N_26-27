@@ -71,6 +71,7 @@ extern Distance frontDistanceSensor;
 extern Distance backDistance;
 extern Distance leftDistanceSensor;
 extern Distance rightDistanceSensor;
+extern Distance liftDistance;
 
 extern Distance* frontDistance;
 extern Distance* backDistancePtr;

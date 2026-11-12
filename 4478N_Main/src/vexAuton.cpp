@@ -18,6 +18,97 @@ using namespace lemlib;
 
 // ---------- auton routines ----------
 
+
+
+void vexSkills(){
+    allianceClose3Pin();
+}
+
+void allianceCloseAlleys(){
+    closeClaw();
+    chassis.setPose(-65,0,90);
+    drivePID(-500,100,300);//toggle
+    drivePID(4,100,200);
+    drivePID(-500,100,300);//toggle
+    chassis.setPose(-65,0,chassis.getPose().theta);
+    casGoTo(800);
+    chassis.moveToPose(-51,-22,160,1300,{.minSpeed = 90},false); //score preload
+    drivePIDAsync(10,30,500);
+    casGoTo(0);
+    delay(200);
+    openClaw();
+    drivePID(-9,100,650);
+    casGoTo(0);
+    chassis.turnToHeading(220,800);
+    chassis.setPose(-51,-7,chassis.getPose().theta);
+    chassis.moveToPose(-65,-25,270,1000,{.lead = 0.3},false);
+    drivePID(20,100,500);
+    closeClaw();
+    left_motors.move(-70);
+    delay(300);
+    casGoTo(1600);
+    chassis.turnToHeading(0,700);
+    resetOdom(false,true,true,false);
+    chassis.setPose(-59,chassis.getPose().y,chassis.getPose().theta);
+    chassis.moveToPose(-56,0,20, 800,{.minSpeed = 80, .earlyExitRange = 10},false);
+    chassis.moveToPose(-55.5,23,30,700,{},false); //score preload
+    drivePIDAsync(10,30,500);
+    casGoTo(600);
+    delay(200);
+    openClaw();
+    delay(100);
+    drivePID(-10,100,650);
+    casGoTo(0);
+    chassis.turnToHeading(310,700);
+    chassis.setPose(-48,15,chassis.getPose().theta);
+    chassis.moveToPose(-65,25,270,1000,{.lead = 0.3},false);
+    drivePID(20,100,500);
+    closeClaw();
+    right_motors.move(-70);
+    delay(200);
+    casGoTo(1400);
+    chassis.turnToHeading(180,700);
+    resetOdom(false,true,false,true);
+    chassis.setPose(-59,chassis.getPose().y,chassis.getPose().theta);
+    chassis.moveToPose(-44,0,160, 800,{.minSpeed = 80, .earlyExitRange = 10},false);
+    chassis.moveToPose(-44,-23,180,700,{},false); //score preload
+    drivePIDAsync(10,30,1000);
+    casGoTo(600);
+    delay(200);
+    openClaw();
+    delay(100);
+}
+
+void allianceClose3Pin(){
+    closeClaw();
+    chassis.setPose(-65,0,90);
+    drivePID(-500,100,300);//toggle
+    drivePID(4,100,200);
+    drivePID(-500,100,300);//toggle
+    chassis.setPose(-65,0,chassis.getPose().theta);
+    casGoTo(800);
+    chassis.moveToPose(-51,-22,160,1300,{.minSpeed = 90},false); //score preload
+    drivePIDAsync(10,30,500);
+    casGoTo(0);
+    delay(200);
+    openClaw();
+    chassis.setPose(-49.5,-17.5,chassis.getPose().theta);
+    drivePID(-9,100,650);
+    chassis.turnToHeading(120,800);
+    chassis.moveToPose(-29,-20,120,1000,{},false);
+    autoClamp();
+    casGoTo(1400);
+    chassis.moveToPose(-40,-22,-100,1000,{},false);
+    releaseStack();
+    drivePID(-10,100,800);
+    casGoTo(0);
+    chassis.moveToPose(-44.5,-42.7,210,1200,{},false);
+    autoClamp();
+    casGoTo(2000);
+    chassis.moveToPose(-45.5,-31,-20,1000,{},false);
+    releaseStack();
+}
+
 void dataloggingRoute(){
     startDatalogging();
     chassis.setPose(0,0,0);
@@ -49,580 +140,8 @@ void accelDecelTest(){
 
 void PIDtuning(){
     chassis.setPose(0,0,0);
-    chassis.turnToHeading(180,2000,{},false);
-    pros::lcd::print(0, "heading: %.2f", chassis.getPose().theta);
-    chassis.turnToHeading(90,2000,{},false);
-    pros::lcd::print(1, "heading: %.2f", chassis.getPose().theta);
-    chassis.turnToHeading(45,2000,{},false);
-    pros::lcd::print(2, "heading: %.2f", chassis.getPose().theta);
-}
-
-void allianceLeft(){
-    chassis.setPose(-12,-65,180);
-    drivePID(500,100,500);//toggle
-    drivePID(-10,100,350);
-    drivePID(500,100,350);//toggle
-    chassis.setPose(-15,-65,chassis.getPose().theta);
-    chassis.moveToPose(-10.5,-32.7,180,1300,{.forwards = false});//go to first roller
-    resetOdom(true,false,false,false);
-    chassis.setPose(-10.5, chassis.getPose().y, chassis.getPose().theta);
-    // chassis.turnToHeading(225,1000);
-    chassis.moveToPose(-30,-51,225,1300,{.forwards = false,.minSpeed = 60},true);//go to first score
-    delay(1300);
-    delay(400);
-    drivePID(10,100,1500);
-    chassis.turnToHeading(135,700);
-    casGoTo(700);
-    drivePID(-11,40,1500);
-    delay(200);
-    drivePID(30,70,1300); 
-    casGoTo(0);
-    chassis.turnToHeading(305,1000,{},true);
-    drivePID(45,50,2400);
-    delay(500);
-    delay(100);
-    delay(1200);
-    chassis.turnToHeading(-13,1000);
-    casGoTo(1000);
-    drivePID(-26,60,2200);
-    casGoTo(400);
-    delay(400);
-    casGoTo(1500);
-}
-
-void allianceRight(){
-    chassis.setPose(12,-65,180);
-    drivePID(500,100,500);//toggle
-    drivePID(-10,100,350);
-    drivePID(500,100,350);//toggle
-    chassis.setPose(15,-65,chassis.getPose().theta);
-    chassis.moveToPose(15.5,-40.7,180,1300,{.forwards = false,.maxSpeed = 60});//go to first roller
-    // chassis.turnToHeading(225,1000);
-        chassis.moveToPose(-37,-52,315,1300,{.forwards = false,.minSpeed = 50},true);//go to first score
-    delay(1300);
-    delay(300);
-    drivePID(14,100,1500);
-    chassis.turnToHeading(225,700);
-    casGoTo(730);
-    drivePID(-15,40,1500);
-    delay(400);
-    drivePID(30,70,1300); 
-    casGoTo(0);
-    chassis.turnToHeading(55,1000,{},true);
-    drivePID(45,50,2400);
-    delay(500);
-    delay(100);
-    delay(1200);
-    chassis.turnToHeading(10,1000);
-    casGoTo(1000);
-    drivePID(-32,60,2200);
-    casGoTo(400);
-    delay(400);
-    casGoTo(1500);
-}
-
-void neutralLeftSimple(){
-    chassis.setPose(0,-65,270);
-    drivePID(-5,100,300);
-    drivePID(500,100,400);//toggle
-    drivePID(-5,100,300);
-    drivePID(500,100,400);//toggle
-    chassis.setPose(-62,0,chassis.getPose().theta);
-    drivePID(-10,100,500);
-    chassis.turnToHeading(85,1000);
-    drivePID(30,60,2000);
-    delay(500); 
-    drivePID(10,40,1000);
-    delay(100);
-    delay(1500);
-    resetOdom(false,true,false,false);
-    chassis.setPose(chassis.getPose().x,0,chassis.getPose().theta);
-    chassis.moveToPose(-47,18,135,2000,{.forwards = false,.maxSpeed = 50},true);
-    delay(300);
-    casGoTo(1700);
-    delay(1000);
-    delay(700);
-    delay(300);
-    casGoTo(400);
-    delay(1000);
-    casGoTo(1500);
-    // chassis.turnToHeading(80,1000);
-    // drivePID(7,100,700);
-    // casGoTo(0);
-    // delay(400);
-    // drivePID(10,100,1000);
-    // delay(1000);
-    // drivePID(-5,100,600);
-    // chassis.turnToHeading(10,800);
-    // drivePID(-70,100,3000);
-}
-
-void neutralLeft(){
-    chassis.setPose(0,-65,270);
-    drivePID(-5,100,300);
-    drivePID(500,100,400);//toggle
-    drivePID(-5,100,300);
-    drivePID(500,100,400);//toggle
-    chassis.setPose(-62,0,chassis.getPose().theta);
-    drivePID(-10,100,500);
-    chassis.turnToHeading(85,900);
-    drivePID(30,60,2000);
-    drivePID(6,40,600);
-    delay(300);
-    delay(100);
-    delay(1000);
-    resetOdom(false,true,false,false);
-    chassis.setPose(chassis.getPose().x,0,chassis.getPose().theta);
-    chassis.moveToPose(-49,20,135,2000,{.forwards = false,.maxSpeed = 70},true);
-    delay(300);
-    casGoTo(1700);
-    delay(600);
-    delay(600);    
-    casGoTo(600);
-    delay(300);
-    casGoTo(1900);
-delay(200);
-    chassis.turnToHeading(95,1000);
-        delay(300);
-        drivePIDAsync(24,50,1200);
-    delay(200);
-    casGoTo(0);
-    delay(1500);
-    chassis.setPose(-9,20,chassis.getPose().theta);
-        chassis.moveToPose(-45,-32.5,20,3000,{.forwards = false},true);
-        delay(1200);
-                delay(1000);
-}
-
-void helperSolo(){
-    delay(500);
-    drivePID(-9,100,1200);
-    delay(400);
-    drivePID(10,100,2000);
-    chassis.turnToHeading(30,1000);
-    drivePID(500,100,1000);
-     drivePID(-5,100,500);
-    drivePID(500,100,1000);
-     drivePID(-7,100,500);
-}
-
-void neutralRightSimple(){
-    chassis.setPose(0,-65,180);
-    drivePID(-5,100,300);
-    drivePID(500,100,400);//toggle
-    drivePID(-5,100,300);
-    drivePID(500,100,400);//toggle
-    chassis.setPose(0,-62,chassis.getPose().theta);
-    drivePID(-10,100,500);
-    chassis.turnToHeading(-5,1000);
-    drivePID(30,60,2000);
-    delay(500); 
-    drivePID(7,40,1000);
-    delay(100);
-    delay(1500);
-    resetOdom(false,true,false,false);
-    chassis.setPose(0,chassis.getPose().y,chassis.getPose().theta);
-    chassis.moveToPose(18,-47,315,2000,{.forwards = false,.maxSpeed = 50},true);
-    delay(300);
-    casGoTo(1700);
-    delay(1000);
-    delay(700);
-    delay(300);
-    casGoTo(400);
-    delay(1000);
-    casGoTo(1500);
-    // chassis.turnToHeading(80,1000);
-    // drivePID(7,100,700);
-    // casGoTo(0);
-    // delay(400);
-    // drivePID(10,100,1000);
-    // delay(1000);
-    // drivePID(-5,100,600);
-    // chassis.turnToHeading(10,800);
-    // drivePID(-70,100,3000);
-}
-
-void neutralRight(){
-    chassis.setPose(0,-65,180);
-    drivePID(-5,100,300);
-    drivePID(500,100,400);//toggle
-    drivePID(-5,100,300);
-    drivePID(500,100,400);//toggle
-    chassis.setPose(0,-62,chassis.getPose().theta);
-    drivePID(-10,100,500);
-    chassis.turnToHeading(-5,900);
-    drivePID(30,60,2000);
-    drivePID(6,40,600);
-    delay(300);
-    delay(100);
-    delay(1000);
-    resetOdom(false,true,false,false);
-    chassis.setPose(0,chassis.getPose().y,chassis.getPose().theta);
-    chassis.moveToPose(18,-47,315,2000,{.forwards = false,.maxSpeed = 70},true);
-    delay(300);
-    casGoTo(1700);
-    delay(600);
-    delay(600);    
-    casGoTo(600);
-    delay(300);
-    casGoTo(1500);
-delay(200);
-    chassis.turnToHeading(-5,1000);
-drivePID(20,50,1200);
-    drivePIDAsync(24,50,1200);
-    delay(200);
-    casGoTo(0);
-    delay(1500);
-    chassis.setPose(9,-20,chassis.getPose().theta);
-        chassis.moveToPose(-32.5,-45,70,3000,{.forwards = false},true);
-        delay(1200);
-                delay(1400);
-}
-
-void close(){
-     chassis.setPose(0,-65,90);
-                        casGoTo(600);
-
-    drivePID(6,100,500);
-    drivePID(-500,100,500);//toggle`
-    drivePID(6,100,500);
-    drivePID(-500,100,500);//toggle
-    chassis.setPose(-64,-10,chassis.getPose().theta);
-    drivePID(17.5,100,1000);    
-    // resetOdom(false,true,false,false);
-    chassis.turnToHeading(180,500);
-                    casGoTo(600);
-    drivePID(22,100,1200);
-    casGoTo(200);
-    delay(400);
-    claw.set_value(false); // score first
-    delay(300);
-    drivePID(-8,100,1000);
-    casGoTo(0);
-    chassis.turnToHeading(90,1000);
-    drivePID(10,100,1000);
-        drivePID(10,100,1000);
-
-    chassis.turnToHeading(0,1000);
-    drivePID(-28,70,1500); 
-    resetOdom(false, true, true, false);
-    chassis.moveToPose(-41,-40,220,2400,{.maxSpeed = 60},false); // grab 2nd pin
-    closeClaw();
-    delay(200);
-    chassis.turnToHeading(0,1000);
-    chassis.moveToPose(-47,-22,0,2000,{.maxSpeed = 78},true); //score 2nd pin
-    casGoTo(1200);
-    delay(2000);
-    casGoTo(400);
-    delay(400);
-    claw.set_value(false);
-    drivePID(-5,100,1000);
-}
-
-void far(){
-        chassis.setPose(0,-65,0);
-                        casGoTo(600);
-
-    drivePID(6,100,500);
-    drivePID(-500,100,500);//toggle`
-    drivePID(6,100,500);
-    drivePID(-500,100,500);//toggle
-    chassis.setPose(-10,-56,chassis.getPose().theta);
-    drivePID(18,100,1000);    
-    resetOdom(false,true,false,false);
-    chassis.setPose(0,chassis.getPose().y,chassis.getPose().theta);
-    chassis.turnToHeading(270,500);
-                    casGoTo(600);
-                    chassis.moveToPose(-23,-46,270,2000,{.maxSpeed = 70}); // score first
-    casGoTo(200);
-    delay(400);
-    claw.set_value(false);
-    delay(300);
-    drivePID(-9,100,1000);
-    chassis.turnToHeading(0,1000);
-    casGoTo(0);
-    resetOdom(false, true, false, false);
-    chassis.setPose(-11, chassis.getPose().y, 0);
-    chassis.moveToPose(-20,-28,-30,2000,{.maxSpeed = 50});//grab 2nd pin
-    closeClaw();
-    delay(200);
-    chassis.moveToPose(-23.6,-43,180,2000,{.maxSpeed = 70},true); //score 2rd pin
-    casGoTo(1500);
-    delay(1200);
-    casGoTo(500);
-    delay(400);
-    claw.set_value(false);
-    delay(300);
-    chassis.setPose(-23.6,-42,chassis.getPose().theta);
-    drivePID(-20,100,1000);
-    chassis.moveToPose(-43,-43,230,2000,{.maxSpeed = 40}); // grab third pin
-    closeClaw();
-    delay(200);
-    chassis.moveToPose(-23.6,-43,90,2000,{.maxSpeed = 70},true); //score 3rd pin
-    casGoTo(2000);
-    delay(1000);
-    casGoTo(1200);
-    delay(400);
-    openClaw();
-
-}
-
-void skillsHard(){
-    chassis.setPose(0,-65,90);
-                        casGoTo(600);
-
-    drivePID(6,100,500);
-    drivePID(-500,100,500);//toggle`
-    drivePID(6,100,500);
-    drivePID(-500,100,500);//toggle
-    chassis.setPose(-64,-10,chassis.getPose().theta);
-    drivePID(18,100,1000);    
-    // resetOdom(false,true,false,false);
-    chassis.turnToHeading(180,500);
-                    casGoTo(600);
-    drivePID(22,100,1200);
-    casGoTo(200);
-    delay(400);
-    claw.set_value(false);
-    delay(300);
-    drivePID(-9,100,1000);
-    casGoTo(0);
-    chassis.turnToHeading(-125,1200);
-    drivePID(30,70,1500); //go to 3 stack
-    pivot(true,1,400);    
-    closeClaw();     
-    turnToHeadingSmart(-10,1000);
-    drivePID(-10,100,1000);
-        drivePID(-10,100,1000);
-
-        resetOdom(false, true, true, false);
-    chassis.moveToPose(-47,-23,0,2000,{.maxSpeed = 60},true); // score second pin
-    casGoTo(1500);
-    delay(1200);
-    casGoTo(500);
-    delay(400);
-    claw.set_value(false);
-    delay(300);
-    drivePID(-10,100,1000);
-        casGoTo(0);
-        turnToHeadingSmart(0,1000);
-
-    resetOdom(false, true, true, false);
-    delay(300);
-    chassis.moveToPose(-52,-45,155,2000,{.maxSpeed = 40}); //grab 3rd pin
-    closeClaw();
-    delay(200);
-
-    chassis.moveToPose(-49,-25,0,2000,{.maxSpeed = 60},true); //score 3rd pin
-    casGoTo(2000);
-    delay(1000);
-    casGoTo(1200);
-    delay(400);
-    openClaw();
-    chassis.turnToHeading(0,1000);
-    drivePID(-36,50,2000);
-            casGoTo(0);
-    turnToHeadingSmart(-90,1000);
-    drivePID(24,50,1500);
-    closeClaw(); // grab 4th pin 1st matchload
-    drivePID(-24,50,1500);
-    chassis.turnToHeading(0,1000);
-    casGoTo(2000);
-    delay(1000);
-    drivePID(36,50,1500);
-    casGoTo(1500);
-    delay(500);
-    openClaw(); //score 4th pin 1st matchload
-    delay(300);
-        casGoTo(0);
-    drivePID(-36,50,1500);
-    turnToHeadingSmart(-90,1000);
-    drivePID(24,50,1500);
-    closeClaw();// grab 4th pin 1st matchload
-    drivePID(-24,50,1500);
-    chassis.turnToHeading(0,1000);
-    casGoTo(2000);
-    delay(1000);
-    drivePID(36,50,1500);
-    casGoTo(1500);
-    delay(500);
-    openClaw();//score 4th pin 1st matchload 
-    delay(300);
-        casGoTo(0);
-    drivePID(-36,50,1500);
-}
-
-void skillsEasy(){
-    chassis.setPose(0,-65,90);
-                        casGoTo(600);
-
-    drivePID(6,100,500);
-    drivePID(-500,100,500);//toggle`
-    drivePID(9,100,500);
-    drivePID(-500,100,800);//toggle
-    chassis.setPose(-64,-10,chassis.getPose().theta);
-    drivePID(17.5,100,1000);    
-    // resetOdom(false,true,false,false);
-    chassis.turnToHeading(180,500);
-                    casGoTo(600);
-    drivePID(22,100,1200);
-    casGoTo(200);
-    delay(400);
-    claw.set_value(false); // score first
-    delay(300);
-    drivePID(-8,100,1000);
-    casGoTo(0);
-    chassis.turnToHeading(90,1000);
-    drivePID(10,100,1000);
-        drivePID(10,100,1000);
-
-    chassis.turnToHeading(0,1000);
-    drivePID(-28,70,1500); 
-    resetOdom(false, true, true, false);
-    chassis.moveToPose(-40,-39,220,2400,{.maxSpeed = 40},false); // grab 2nd pin
-    closeClaw();
-    delay(200);
-    chassis.turnToHeading(0,1000);
-    chassis.moveToPose(-47,-22,0,2000,{.maxSpeed = 78},true); //score 2nd pin
-    casGoTo(1200);
-    delay(2000);
-    casGoTo(400);
-    delay(400);
-    claw.set_value(false);
-        turnToHeadingSmart(0,1000);
-    delay(300);
-    drivePID(-30,100,1000);
-    casGoTo(0);
-    turnToHeadingSmart(-90,1000);
-    drivePID(40,40,2000);
-    closeClaw(); // grab 3rd pin 1st matchload
-    delay(300);
-    drivePID(-18,1000,1200);
-    chassis.turnToHeading(0,1000);
-    drivePIDAsync(60,70,2500);
-    casGoTo(1700);
-    delay(2500);
-    casGoTo(600);
-    delay(400);
-    openClaw(); //score 3rd pin 1st matchload
-    delay(300);
-    drivePID(-30,100,1000);
-    casGoTo(0);
-    turnToHeadingSmart(-90,1000);
-    drivePID(50,50,2500);
-    closeClaw(); // grab 4th pin 2nd matchload
-    delay(300);
-    drivePID(-18,1000,1200);
-    chassis.turnToHeading(0,1000);
-        
-    drivePIDAsync(60,40,2500);
-     casGoTo(2300);
-         delay(2400);
-    casGoTo(2000);
-    delay(500);
-    openClaw(); //score 4th pin 2nd matchload
-    delay(300);
-    drivePID(-30,100,1000);
-    casGoTo(0);
-    turnToHeadingSmart(-90,1000);
-    drivePID(54,50,2500);
-     closeClaw(); // grab 5th pin 3rd matchload
-    delay(300);
-    drivePID(-18,1000,1200);
-    chassis.turnToHeading(0,1000);
-    casGoTo(2600);
-    delay(600);
-    drivePIDAsync(60,60,3500);
-    delay(3000);
-    casGoTo(2000);
-    delay(400);
-    openClaw(); //score 5th pin 3rd matchload
-    delay(300);
-    drivePID(-10,100,1000);
-    chassis.turnToHeading(90,1000);
-    drivePID(60,100,2000);
-    chassis.turnToHeading(0,1000);
-    drivePID(45,100,2000);
-    // drivePID(-30,100,1000);
-    // casGoTo(0);
-    // turnToHeadingSmart(-90,1000);
-    // drivePID(40,50,1500);
-    // closeClaw(); // grab 1st for second stack
-    // drivePID(-18,1000,1200);
-    // chassis.turnToHeading(90,1000);
-    // drivePIDAsync(50,100,2500);
-    // casGoTo(1000);
-    // delay(1200);
-    // casGoTo(400);
-    // delay(300);
-    // openClaw(); //score 1st for second stack
-    // delay(300);
-    // drivePID(-30,100,1000);
-    // casGoTo(0);
-    // turnToHeadingSmart(-90,1000);
-    // drivePID(40,50,1500);
-    // closeClaw(); // grab 2nd for second stack
-    //  drivePID(-18,1000,1200);
-    // chassis.turnToHeading(90,1000);
-    // drivePIDAsync(50,50,3500);
-    // casGoTo(1700);
-    // delay(2500);
-    // casGoTo(1000);
-    // delay(300);
-    // openClaw(); //score 2nd for second stack
-    // delay(300);
-    // drivePID(-30,100,1000);
-    // casGoTo(0);
-    // turnToHeadingSmart(-90,1000);
-    // drivePID(40,50,1500);
-    // closeClaw(); // grab 3rd for second stack
-    // drivePID(-18,1000,1200);
-    // chassis.turnToHeading(90,1000);
-    //     drivePIDAsync(50,50,3500);
-    // casGoTo(2200);
-    // delay(2500);
-    // casGoTo(1500);
-    // delay(300);
-    // openClaw(); //score 3rd for second stack
-    // delay(300);
-    // drivePID(-30,100,1000);
-    // casGoTo(0);
-    // turnToHeadingSmart(-90,1000);
-    // drivePID(40,50,1500);
-    // closeClaw();
-
-
-}
-
-void allianceClose(){
-    closeClaw();
-    chassis.setPose(-65,0,90);
-    drivePID(-500,100,300);//toggle`
-    drivePID(9,100,300);
-    drivePID(-500,100,300);//toggle
-    chassis.setPose(-65,0,chassis.getPose().theta);
-    casGoTo(800);
-    chassis.moveToPose(-51,-22,180,1450,{},false); //score preload
-    casGoTo(0);
-    delay(200);
-    openClaw();
-    delay(100);
-    drivePID(-13,100,800);
-    casGoTo(0);
-    chassis.setPose(-47,-10.5,chassis.getPose().theta);
-    chassis.moveToPoint(-66,-16,1400,{.minSpeed = 70, .earlyExitRange = 10},false); //grab 2nd pin
-    chassis.moveToPoint(-66,-16,1400,{.minSpeed = 70, .earlyExitRange = 10},false); //grab 2nd pin
-    chassis.swingToHeading(270,DriveSide::RIGHT,800,{},false);
-    closeClaw();
-    left_motors.move(-70);
-    delay(200);
-    casGoTo(1600);
-    chassis.turnToHeading(0,700);
-    resetOdom(false,true,true,false);
-    chassis.setPose(-59,chassis.getPose().y,chassis.getPose().theta);
-    chassis.moveToPose(-57,23,20,2000,{},false); //score preload
-    casGoTo(600);
-    delay(200);
-    openClaw();
-    delay(100);
+    chassis.moveToPose(0,48,0,2000,{},false);
+    chassis.moveToPose(0,24,0,2000,{.forwards = false},false);
+    chassis.moveToPose(0,12,0,2000,{.forwards = false},false);
+    chassis.moveToPose(24,36,90,2000,{.horizontalDrift = 8, .lead = 0.5},false);
 }

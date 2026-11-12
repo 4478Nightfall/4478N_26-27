@@ -201,6 +201,7 @@ pros::Distance frontDistanceSensor(16);
 pros::Distance backDistance(20);
 pros::Distance leftDistanceSensor(19);
 pros::Distance rightDistanceSensor(11);
+pros::Distance liftDistance(17);
 
 Distance* frontDistance = &frontDistanceSensor;
 Distance* backDistancePtr = &backDistance;

@@ -78,9 +78,39 @@ void casGoTo(double targetDeg) {
     casRBottom.move_absolute(targetDeg, casMaxRpm);
 }
 
+void releaseStack(int timeout){
+    uint32_t startTime = pros::millis();
+    while (liftDistance.get() > 200 && pros::millis() - startTime < timeout){
+    casLTop.move(-127);
+    casLBottom.move(-127);
+    casRTop.move(-127);
+    casRBottom.move(-127);
+    pros::delay(10);
+    } 
+    casRTop.brake();
+    casRBottom.brake();
+    casLTop.brake();
+    casLBottom.brake();
+    openClaw();
+}
+
 // ---------- claw ----------
 void openClaw() { 
     claw.set_value(false); 
+}
+
+void autoClamp(){
+    while(chassis.isInMotion()){
+        if(backDistance.get() < 100){
+            closeClaw();
+            delay(200);
+            chassis.cancelMotion();
+        }        
+        else{
+            closeClaw();
+            delay(200);
+        }
+    }
 }
 void closeClaw() { 
     claw.set_value(true);
