@@ -160,10 +160,9 @@ void drivePID(double fwdVal, double maxSpeedPercent, double timeout, bool claw)
         // Clamp output
         motorPower = std::clamp(motorPower, -maxMotor, maxMotor);
 
-        // Claw mode: object is in the claw, so stop right now (brake happens after the loop)
+        // Claw mode: object is in the claw, so stop right now (brake and clamp happen after the loop)
         if (claw == true && frontDistanceSensor.get() < 100)
         {
-            closeClaw();
             break;
         }
 
@@ -195,6 +194,12 @@ void drivePID(double fwdVal, double maxSpeedPercent, double timeout, bool claw)
 
     left_motors.brake();
     right_motors.brake();
+
+    // Claw mode: close whether the sensor tripped or the drive just finished/timed out
+    if (claw == true)
+    {
+        closeClaw();
+    }
 }
 
 static std::atomic<bool> drivePidStopRequested(false);

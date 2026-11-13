@@ -159,7 +159,7 @@ void logData()
 
     double autonSelectorDeg = autonSelector.get_position() / 100.0;
     double hTrackerDeg = hTracker.get_position() / 100.0;
-    double imuHeading = imu2.get_heading();
+    double imuHeading = imu1.get_heading();
 
     double mflTemp = mfl.get_temperature();
     double mflVel = mfl.get_actual_velocity();
@@ -205,9 +205,9 @@ void logData()
     int mbrOverTemp = mbr.is_over_temp();
     int mbrOverCurrent = mbr.is_over_current();
 
-    double imuRotation = imu2.get_rotation();
-    double imuPitch = imu2.get_pitch();
-    double imuRoll = imu2.get_roll();
+    double imuRotation = imu1.get_rotation();
+    double imuPitch = imu1.get_pitch();
+    double imuRoll = imu1.get_roll();
 
     std::fprintf(file, "%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,"
         "%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,"

@@ -84,6 +84,8 @@ void initialize()
             distLine(3, "B", backDistancePtr);
             distLine(4, "L", leftDistance);
             distLine(5, "R", rightDistance);
+            pros::delay(10); // delay to save resources. DO NOT REMOVE
+
             displayVEXSelection();
 
             // pros::lcd::print(6, "dist rst: opctl B/Dpad/Y");

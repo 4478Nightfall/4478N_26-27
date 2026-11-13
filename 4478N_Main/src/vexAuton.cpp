@@ -81,32 +81,43 @@ void allianceCloseAlleys(){
 
 void allianceClose3Pin(){
     closeClaw();
-    chassis.setPose(-65,0,90);
+    chassis.setPose(-64,0,90);
     drivePID(-500,100,300);//toggle
     drivePID(4,100,200);
     drivePID(-500,100,300);//toggle
-    chassis.setPose(-65,0,chassis.getPose().theta);
+    chassis.setPose(-60,0,chassis.getPose().theta);
     casGoTo(800);
-    chassis.moveToPose(-51,-22,160,1300,{.minSpeed = 90},false); //score preload
+    chassis.moveToPose(-45,-30,160,1500,{},false); //score preload
     drivePIDAsync(10,30,500);
     casGoTo(0);
     delay(200);
     openClaw();
-    chassis.setPose(-49.5,-17.5,chassis.getPose().theta);
-    drivePID(-9,100,650);
-    chassis.turnToHeading(120,800);
-    chassis.moveToPose(-29,-20,120,1000,{},false);
-    autoClamp();
+    drivePID(-11,100,650);
+    resetOdom(false,false,false,true);
+    chassis.setPose(chassis.getPose().x,2,chassis.getPose().theta);
+    chassis.moveToPose(-18.5,-18.5,120,2000,{.maxSpeed = 60},true);
+    delay(300);
+    autoClamp(150);
+    delay(300);
     casGoTo(1400);
-    chassis.moveToPose(-40,-22,-100,1000,{},false);
-    releaseStack();
+    chassis.moveToPose(-80,-10,-90,1150,{},false);
+    drivePIDAsync(10,30,500);
+    casGoTo(301);
+    delay(400);
+    openClaw();
     drivePID(-10,100,800);
+    resetOdom(false,false,true,false);
+    chassis.setPose(-26,chassis.getPose().y,chassis.getPose().theta);
     casGoTo(0);
-    chassis.moveToPose(-44.5,-42.7,210,1200,{},false);
-    autoClamp();
+    chassis.moveToPose(-45,-73,210,1600,{.maxSpeed = 60},true);
+    autoClamp(150);
     casGoTo(2000);
-    chassis.moveToPose(-45.5,-31,-20,1000,{},false);
-    releaseStack();
+    chassis.turnToHeading(0,800);
+    resetOdom(false,true,false,false);
+    chassis.setPose(-47,chassis.getPose().y, chassis.getPose().theta);    chassis.moveToPose(-52,-23,0,1500,{},false);
+    casGoTo(1400);
+    delay(300);
+    openClaw();
 }
 
 void dataloggingRoute(){

@@ -11,7 +11,6 @@ const int numAutons = 6; // must divide 360 evenly (selector splits the dial int
 void displayVEXSelection()
 {
     int selection = getAutonSelection(numAutons);
-    pros::lcd::set_text(1, "VEX Autonomous Selector");
 
     std::string autonName;
     switch (selection)
@@ -38,7 +37,7 @@ void displayVEXSelection()
         autonName = "Unknown";
     }
 
-    pros::lcd::set_text(2, "Selected: " + autonName);
+    pros::lcd::set_text(1, "Selected: " + autonName);
 }
 
 // ---------- run the VEX auton picked on the selector ----------

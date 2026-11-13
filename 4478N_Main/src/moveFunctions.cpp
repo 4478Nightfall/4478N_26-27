@@ -99,18 +99,16 @@ void openClaw() {
     claw.set_value(false); 
 }
 
-void autoClamp(){
+void autoClamp(int dist){
     while(chassis.isInMotion()){
-        if(backDistance.get() < 100){
-            closeClaw();
-            delay(200);
+        if(frontDistanceSensor.get() < dist){
             chassis.cancelMotion();
-        }        
-        else{
-            closeClaw();
-            delay(200);
+            break;
         }
+        delay(10);
     }
+    // closes whether the sensor tripped or the motion just finished/timed out
+    closeClaw();
 }
 void closeClaw() { 
     claw.set_value(true);
